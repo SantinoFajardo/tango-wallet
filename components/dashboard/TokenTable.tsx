@@ -81,7 +81,7 @@ export function TokenTable({ address, chain, onTotalChange }: TokenTableProps) {
     {
       key: `native-${chain.id}`,
       symbol: nativeSymbol,
-      name: chain.name ?? nativeSymbol,
+      name: chain.nativeCurrency?.name ?? nativeSymbol,
       displayValue: nativeAmount.toLocaleString("en-US", { maximumFractionDigits: 6 }),
       priceUSD: nativePriceUSD,
       valueUSD: nativeValueUSD,
@@ -145,17 +145,17 @@ export function TokenTable({ address, chain, onTotalChange }: TokenTableProps) {
                   <td className="px-6 py-4 text-right text-ink-dim">
                     {row.priceUSD > 0
                       ? `$${row.priceUSD.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
                       : "—"}
                   </td>
                   <td className="px-6 py-4 text-right font-medium text-ink">
                     {row.valueUSD > 0
                       ? `$${row.valueUSD.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}`
                       : "—"}
                   </td>
                 </tr>
