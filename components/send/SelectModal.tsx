@@ -59,16 +59,16 @@ export function SelectModal<T extends SelectItem>({
 
   return (
     <div className="space-y-1.5">
-      <label className="text-xs font-medium text-zinc-400">{label}</label>
+      <label className="text-xs font-medium text-ink-dim">{label}</label>
 
       {loading ? (
-        <div className="h-12 rounded-xl bg-zinc-800 animate-pulse" />
+        <div className="h-12 rounded-xl bg-layer animate-pulse" />
       ) : (
         <button
           type="button"
           disabled={disabled}
           onClick={() => setOpen(true)}
-          className="flex w-full items-center gap-3 rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-left transition-colors hover:border-zinc-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex w-full items-center gap-3 rounded-xl border border-line bg-layer px-4 py-3 text-sm text-left transition-colors hover:border-line-hi disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {selected ? (
             <>
@@ -82,19 +82,19 @@ export function SelectModal<T extends SelectItem>({
                 />
               )}
               <span className="flex-1 min-w-0">
-                <span className="block font-medium text-zinc-50 truncate">
+                <span className="block font-medium text-ink truncate">
                   {selected.symbol ?? selected.name}
                 </span>
                 {selected.symbol && (
-                  <span className="block text-xs text-zinc-500 truncate">
+                  <span className="block text-xs text-ink-faint truncate">
                     {selected.name}
                   </span>
                 )}
               </span>
-              <span className="text-zinc-500 text-xs shrink-0">▾</span>
+              <span className="text-ink-faint text-xs shrink-0">▾</span>
             </>
           ) : (
-            <span className="text-zinc-500 flex-1">{placeholder}</span>
+            <span className="text-ink-faint flex-1">{placeholder}</span>
           )}
         </button>
       )}
@@ -105,24 +105,24 @@ export function SelectModal<T extends SelectItem>({
           onClick={() => setOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-2xl border border-zinc-700 bg-zinc-900 shadow-2xl overflow-hidden"
+            className="w-full max-w-md rounded-2xl border border-line bg-surface shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-4 pt-4 pb-3 border-b border-zinc-800">
-              <p className="text-sm font-semibold text-zinc-200 mb-3">{label}</p>
+            <div className="px-4 pt-4 pb-3 border-b border-line">
+              <p className="text-sm font-semibold text-ink mb-3">{label}</p>
               <input
                 ref={searchRef}
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-2.5 text-sm text-zinc-50 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
+                className="w-full rounded-xl border border-line bg-layer px-4 py-2.5 text-sm text-ink placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-brand transition"
               />
             </div>
 
             <ul className="max-h-72 overflow-y-auto py-2">
               {filtered.length === 0 ? (
-                <li className="px-4 py-6 text-center text-zinc-500 text-sm">
+                <li className="px-4 py-6 text-center text-ink-faint text-sm">
                   No results
                 </li>
               ) : (
@@ -134,10 +134,10 @@ export function SelectModal<T extends SelectItem>({
                         onSelect(item);
                         setOpen(false);
                       }}
-                      className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-zinc-800 ${
+                      className={`flex w-full items-center gap-3 px-4 py-3 text-sm transition-colors hover:bg-layer ${
                         selected?.id === item.id
-                          ? "bg-violet-950/40 text-zinc-50"
-                          : "text-zinc-300"
+                          ? "bg-tint text-ink"
+                          : "text-ink-dim"
                       }`}
                     >
                       {item.image_url && (
@@ -154,13 +154,13 @@ export function SelectModal<T extends SelectItem>({
                           {item.symbol ?? item.name}
                         </span>
                         {item.symbol && (
-                          <span className="block text-xs text-zinc-500 truncate">
+                          <span className="block text-xs text-ink-faint truncate">
                             {item.name}
                           </span>
                         )}
                       </span>
                       {selected?.id === item.id && (
-                        <span className="text-violet-400 text-xs shrink-0">✓</span>
+                        <span className="text-tint-ink text-xs shrink-0">✓</span>
                       )}
                     </button>
                   </li>

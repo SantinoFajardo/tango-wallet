@@ -13,6 +13,7 @@ import { getChains, getTokensByChain } from "@/components/dashboard/actions/asse
 import type { ChainRow, TokenRow } from "@/components/dashboard/actions/assets";
 import { recordSponsoredTransaction } from "@/components/dashboard/actions/transactions";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import { SelectModal } from "@/components/send/SelectModal";
 
 function parseTokenAmount(amount: string, decimals: number): bigint {
@@ -107,7 +108,7 @@ export function SendForm() {
 
   if (!account) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh] text-zinc-500">
+      <div className="flex items-center justify-center min-h-[40vh] text-ink-dim">
         Connect your wallet to send tokens.
       </div>
     );
@@ -134,51 +135,39 @@ export function SendForm() {
         disabled={!selectedChain}
       />
 
-      {/* Recipient */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-zinc-400">Recipient address</label>
-        <input
-          type="text"
-          placeholder="0x..."
-          value={recipient}
-          onChange={(e) => setRecipient(e.target.value)}
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-50 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
-        />
-      </div>
+      <Input
+        label="Recipient address"
+        type="text"
+        placeholder="0x..."
+        value={recipient}
+        onChange={(e) => setRecipient(e.target.value)}
+        inputSize="lg"
+      />
 
-      {/* Amount */}
-      <div className="space-y-1.5">
-        <label className="text-xs font-medium text-zinc-400">Amount</label>
-        <div className="relative">
-          <input
-            type="number"
-            min="0"
-            step="any"
-            placeholder="0.0"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 pr-20 text-sm text-zinc-50 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500 transition"
-          />
-          {selectedToken && (
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-medium text-zinc-400 pointer-events-none">
-              {selectedToken.symbol}
-            </span>
-          )}
-        </div>
-      </div>
+      <Input
+        label="Amount"
+        type="number"
+        min="0"
+        step="any"
+        placeholder="0.0"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+        inputSize="lg"
+        suffix={selectedToken?.symbol}
+      />
 
-      {error && <p className="text-red-400 text-xs">{error}</p>}
+      {error && <p className="text-err-ink text-xs">{error}</p>}
 
       {txHash && (
-        <div className="rounded-xl border border-green-700 bg-green-950 px-4 py-3">
-          <p className="text-green-400 text-sm font-medium">Transaction confirmed!</p>
-          <p className="text-zinc-400 text-xs font-mono mt-1 break-all">{txHash}</p>
+        <div className="rounded-xl border border-ok-rim bg-ok-wash px-4 py-3">
+          <p className="text-ok-ink text-sm font-medium">Transaction confirmed!</p>
+          <p className="text-ink-dim text-xs font-mono mt-1 break-all">{txHash}</p>
           {selectedChain?.explorer_url && (
             <a
               href={`${selectedChain.explorer_url}/tx/${txHash}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-violet-400 text-xs underline mt-1 inline-block"
+              className="text-link text-xs underline mt-1 inline-block"
             >
               View on explorer →
             </a>

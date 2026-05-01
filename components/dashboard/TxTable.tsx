@@ -45,10 +45,10 @@ interface TxTableProps {
 
 function RowSkeleton() {
   return (
-    <tr className="border-b border-zinc-800/50">
+    <tr className="border-b border-line">
       {Array.from({ length: 6 }).map((_, j) => (
         <td key={j} className="px-6 py-4">
-          <div className="h-4 rounded bg-zinc-800 animate-pulse w-24" />
+          <div className="h-4 rounded bg-layer animate-pulse w-24" />
         </td>
       ))}
     </tr>
@@ -83,14 +83,14 @@ export function TxTable({ address, chain }: TxTableProps) {
   }, [address, chain]);
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-      <div className="px-6 py-4 border-b border-zinc-800">
-        <h2 className="text-sm font-semibold text-zinc-200">Transaction History</h2>
+    <div className="rounded-xl border border-line bg-surface overflow-hidden">
+      <div className="px-6 py-4 border-b border-line">
+        <h2 className="text-sm font-semibold text-ink">Transaction History</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-zinc-500 text-xs border-b border-zinc-800">
+            <tr className="text-left text-ink-faint text-xs border-b border-line">
               <th className="px-6 py-3 font-medium">Hash</th>
               <th className="px-6 py-3 font-medium">From</th>
               <th className="px-6 py-3 font-medium">To</th>
@@ -108,7 +108,7 @@ export function TxTable({ address, chain }: TxTableProps) {
               <tr>
                 <td
                   colSpan={6}
-                  className="px-6 py-8 text-center text-red-400 text-xs"
+                  className="px-6 py-8 text-center text-err-ink text-xs"
                 >
                   {errorMsg}
                 </td>
@@ -117,7 +117,7 @@ export function TxTable({ address, chain }: TxTableProps) {
               <tr>
                 <td
                   colSpan={6}
-                  className="px-6 py-8 text-center text-zinc-600"
+                  className="px-6 py-8 text-center text-ink-faint"
                 >
                   No transactions found on this chain
                 </td>
@@ -143,7 +143,7 @@ export function TxTable({ address, chain }: TxTableProps) {
                 return (
                   <tr
                     key={tx.hash}
-                    className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors"
+                    className="border-b border-line hover:bg-stripe transition-colors"
                   >
                     <td className="px-6 py-4">
                       {txUrl ? (
@@ -151,24 +151,24 @@ export function TxTable({ address, chain }: TxTableProps) {
                           href={txUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-mono text-violet-400 hover:text-violet-300 transition-colors"
+                          className="font-mono text-link hover:text-link-hi transition-colors"
                         >
                           {shortHash(tx.hash)}
                         </a>
                       ) : (
-                        <span className="font-mono text-zinc-400">
+                        <span className="font-mono text-ink-dim">
                           {shortHash(tx.hash)}
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 font-mono text-zinc-400 text-xs">
+                    <td className="px-6 py-4 font-mono text-ink-dim text-xs">
                       {tx.from_address ? (
                         fromUrl ? (
                           <a
                             href={fromUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-zinc-200 transition-colors"
+                            className="hover:text-ink transition-colors"
                           >
                             {shortAddr(tx.from_address)}
                           </a>
@@ -179,14 +179,14 @@ export function TxTable({ address, chain }: TxTableProps) {
                         "—"
                       )}
                     </td>
-                    <td className="px-6 py-4 font-mono text-zinc-400 text-xs">
+                    <td className="px-6 py-4 font-mono text-ink-dim text-xs">
                       {tx.to_address ? (
                         toUrl ? (
                           <a
                             href={toUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hover:text-zinc-200 transition-colors"
+                            className="hover:text-ink transition-colors"
                           >
                             {shortAddr(tx.to_address)}
                           </a>
@@ -198,7 +198,7 @@ export function TxTable({ address, chain }: TxTableProps) {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right font-mono">
-                      <span className={!isOutbound ? "text-green-400" : "text-zinc-200"}>
+                      <span className={!isOutbound ? "text-ok-ink" : "text-ink-dim"}>
                         {!isOutbound ? "+" : ""}
                         {weiToEth(
                           tx.value,
@@ -206,20 +206,20 @@ export function TxTable({ address, chain }: TxTableProps) {
                         )}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right text-zinc-500 text-xs whitespace-nowrap">
+                    <td className="px-6 py-4 text-right text-ink-faint text-xs whitespace-nowrap">
                       {timestamp}
                     </td>
                     <td className="px-6 py-4 text-center">
                       {tx.status === 1 ? (
-                        <span className="inline-flex items-center rounded-full bg-green-950 px-2 py-0.5 text-xs font-medium text-green-400 ring-1 ring-green-800">
+                        <span className="inline-flex items-center rounded-full bg-ok-wash px-2 py-0.5 text-xs font-medium text-ok-ink ring-1 ring-ok-rim">
                           Success
                         </span>
                       ) : tx.status === 0 ? (
-                        <span className="inline-flex items-center rounded-full bg-red-950 px-2 py-0.5 text-xs font-medium text-red-400 ring-1 ring-red-800">
+                        <span className="inline-flex items-center rounded-full bg-err-wash px-2 py-0.5 text-xs font-medium text-err-ink ring-1 ring-err-rim">
                           Failed
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded-full bg-zinc-800 px-2 py-0.5 text-xs font-medium text-zinc-400 ring-1 ring-zinc-700">
+                        <span className="inline-flex items-center rounded-full bg-layer px-2 py-0.5 text-xs font-medium text-ink-dim ring-1 ring-line">
                           Pending
                         </span>
                       )}

@@ -25,14 +25,14 @@ export function SponsoredGasCard({ address }: SponsoredGasCardProps) {
   }, [address]);
 
   return (
-    <div className="rounded-xl border border-violet-800/40 bg-violet-950/30 p-6 flex flex-col gap-2">
-      <p className="text-xs font-medium text-violet-400 uppercase tracking-wider">
+    <div className="rounded-xl border border-tint-rim bg-tint p-6 flex flex-col gap-2">
+      <p className="text-xs font-medium text-tint-ink uppercase tracking-wider">
         Total Gas Sponsored
       </p>
       {loading ? (
-        <div className="h-9 w-28 rounded-md bg-violet-900/40 animate-pulse" />
+        <div className="h-9 w-28 rounded-md bg-layer animate-pulse" />
       ) : (
-        <p className="text-3xl font-bold text-zinc-50">
+        <p className="text-3xl font-bold text-ink">
           $
           {(data?.totalUSD ?? 0).toLocaleString("en-US", {
             minimumFractionDigits: 4,
@@ -40,7 +40,7 @@ export function SponsoredGasCard({ address }: SponsoredGasCardProps) {
           })}
         </p>
       )}
-      <p className="text-xs text-zinc-500">
+      <p className="text-xs text-ink-faint">
         {loading ? "—" : `Saved across ${data?.txCount ?? 0} transactions · paid by Tango Wallet`}
       </p>
     </div>

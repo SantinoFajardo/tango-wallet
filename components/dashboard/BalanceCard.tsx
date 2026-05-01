@@ -11,19 +11,19 @@ interface BalanceCardProps {
 export function BalanceCard({ totalUSD, isLoading }: BalanceCardProps) {
   const router = useRouter();
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-6 flex flex-col gap-2">
-      <p className="text-xs font-medium text-zinc-500 uppercase tracking-wider">
+    <div className="rounded-xl border border-line bg-surface p-6 flex flex-col gap-2">
+      <p className="text-xs font-medium text-ink-faint uppercase tracking-wider">
         Total Balance
       </p>
       {isLoading ? (
-        <div className="h-9 w-36 rounded-md bg-zinc-800 animate-pulse" />
+        <div className="h-9 w-36 rounded-md bg-layer animate-pulse" />
       ) : (
-        <p className="text-3xl font-bold text-zinc-50">
+        <p className="text-3xl font-bold text-ink">
           ${totalUSD.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
         </p>
       )}
       {/*  todo: balances on all chains */}
-      <p className="text-xs text-zinc-500">Across all tokens · Base Sepolia</p>
+      <p className="text-xs text-ink-faint">Across all tokens · Base Sepolia</p>
       <div className="flex gap-2 w-full">
         <Button onClick={() => {
           router.push("/send");

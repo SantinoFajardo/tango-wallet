@@ -1,26 +1,115 @@
 @import "tailwindcss";
 
+/* ── Palette: light mode ─────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* surfaces */
+  --page:       #ffffff;
+  --surface:    #f4f4f5;
+  --layer:      #e4e4e7;
+  --stripe:     #ededef;
+
+  /* text */
+  --ink:        #09090b;
+  --ink-dim:    #52525b;
+  --ink-faint:  #a1a1aa;
+
+  /* borders */
+  --line:       #d4d4d8;
+  --line-hi:    #a1a1aa;
+
+  /* brand — violet */
+  --brand:      #7c3aed;
+  --brand-hi:   #6d28d9;
+  --brand-on:   #ffffff;
+
+  /* accent — violet-tinted surfaces */
+  --tint:       #f5f3ff;
+  --tint-rim:   #c4b5fd;
+  --tint-ink:   #6d28d9;
+
+  /* links */
+  --link:       #7c3aed;
+  --link-hi:    #6d28d9;
+
+  /* danger */
+  --danger:     #dc2626;
+  --danger-hi:  #b91c1c;
+
+  /* success */
+  --ok-wash:    #f0fdf4;
+  --ok-rim:     #86efac;
+  --ok-ink:     #15803d;
+
+  /* error */
+  --err-wash:   #fef2f2;
+  --err-rim:    #fca5a5;
+  --err-ink:    #dc2626;
 }
 
+/* ── Palette: dark mode ──────────────────────────────────────── */
+.dark {
+  --page:       #09090b;
+  --surface:    #18181b;
+  --layer:      #27272a;
+  --stripe:     #1e1e20;
+
+  --ink:        #fafafa;
+  --ink-dim:    #a1a1aa;
+  --ink-faint:  #52525b;
+
+  --line:       #3f3f46;
+  --line-hi:    #71717a;
+
+  --brand:      #7c3aed;
+  --brand-hi:   #8b5cf6;
+  --brand-on:   #ffffff;
+
+  --tint:       #160826;
+  --tint-rim:   #3b1d6b;
+  --tint-ink:   #a78bfa;
+
+  --link:       #a78bfa;
+  --link-hi:    #c4b5fd;
+
+  --danger:     #b91c1c;
+  --danger-hi:  #dc2626;
+
+  --ok-wash:    #052e16;
+  --ok-rim:     #166534;
+  --ok-ink:     #4ade80;
+
+  --err-wash:   #450a0a;
+  --err-rim:    #991b1b;
+  --err-ink:    #f87171;
+}
+
+/* ── Register tokens with Tailwind ───────────────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-page:      var(--page);
+  --color-surface:   var(--surface);
+  --color-layer:     var(--layer);
+  --color-stripe:    var(--stripe);
+  --color-ink:       var(--ink);
+  --color-ink-dim:   var(--ink-dim);
+  --color-ink-faint: var(--ink-faint);
+  --color-line:      var(--line);
+  --color-line-hi:   var(--line-hi);
+  --color-brand:     var(--brand);
+  --color-brand-hi:  var(--brand-hi);
+  --color-brand-on:  var(--brand-on);
+  --color-tint:      var(--tint);
+  --color-tint-rim:  var(--tint-rim);
+  --color-tint-ink:  var(--tint-ink);
+  --color-link:      var(--link);
+  --color-link-hi:   var(--link-hi);
+  --color-danger:    var(--danger);
+  --color-danger-hi: var(--danger-hi);
+  --color-ok-wash:   var(--ok-wash);
+  --color-ok-rim:    var(--ok-rim);
+  --color-ok-ink:    var(--ok-ink);
+  --color-err-wash:  var(--err-wash);
+  --color-err-rim:   var(--err-rim);
+  --color-err-ink:   var(--err-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

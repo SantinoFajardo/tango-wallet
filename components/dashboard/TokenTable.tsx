@@ -26,10 +26,10 @@ interface TokenTableProps {
 
 function Skeleton() {
   return (
-    <tr className="border-b border-zinc-800/50">
+    <tr className="border-b border-line">
       {Array.from({ length: 4 }).map((_, j) => (
         <td key={j} className="px-6 py-4">
-          <div className="h-4 rounded bg-zinc-800 animate-pulse w-20" />
+          <div className="h-4 rounded bg-layer animate-pulse w-20" />
         </td>
       ))}
     </tr>
@@ -105,14 +105,14 @@ export function TokenTable({ address, chain, onTotalChange }: TokenTableProps) {
   const isSpinning = nativeLoading || loading;
 
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 overflow-hidden">
-      <div className="px-6 py-4 border-b border-zinc-800">
-        <h2 className="text-sm font-semibold text-zinc-200">Tokens</h2>
+    <div className="rounded-xl border border-line bg-surface overflow-hidden">
+      <div className="px-6 py-4 border-b border-line">
+        <h2 className="text-sm font-semibold text-ink">Tokens</h2>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-left text-zinc-500 text-xs border-b border-zinc-800">
+            <tr className="text-left text-ink-faint text-xs border-b border-line">
               <th className="px-6 py-3 font-medium">Token</th>
               <th className="px-6 py-3 font-medium text-right">Balance</th>
               <th className="px-6 py-3 font-medium text-right">Price</th>
@@ -126,23 +126,23 @@ export function TokenTable({ address, chain, onTotalChange }: TokenTableProps) {
               rows.map((row) => (
                 <tr
                   key={row.key}
-                  className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors"
+                  className="border-b border-line hover:bg-stripe transition-colors"
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center text-xs font-bold text-zinc-300">
+                      <div className="w-8 h-8 rounded-full bg-layer flex items-center justify-center text-xs font-bold text-ink-dim">
                         {row.symbol.slice(0, 2)}
                       </div>
                       <div>
-                        <p className="font-medium text-zinc-100">{row.symbol}</p>
-                        <p className="text-xs text-zinc-500">{row.name}</p>
+                        <p className="font-medium text-ink">{row.symbol}</p>
+                        <p className="text-xs text-ink-faint">{row.name}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-right font-mono text-zinc-200">
+                  <td className="px-6 py-4 text-right font-mono text-ink-dim">
                     {row.displayValue}
                   </td>
-                  <td className="px-6 py-4 text-right text-zinc-400">
+                  <td className="px-6 py-4 text-right text-ink-dim">
                     {row.priceUSD > 0
                       ? `$${row.priceUSD.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
@@ -150,7 +150,7 @@ export function TokenTable({ address, chain, onTotalChange }: TokenTableProps) {
                         })}`
                       : "—"}
                   </td>
-                  <td className="px-6 py-4 text-right font-medium text-zinc-100">
+                  <td className="px-6 py-4 text-right font-medium text-ink">
                     {row.valueUSD > 0
                       ? `$${row.valueUSD.toLocaleString("en-US", {
                           minimumFractionDigits: 2,

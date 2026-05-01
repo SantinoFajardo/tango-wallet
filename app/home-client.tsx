@@ -65,14 +65,14 @@ export function HomeClient() {
         <main className="flex-1 px-4 py-8 max-w-5xl mx-auto w-full space-y-6">
           {!account ? (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
-              <h1 className="text-4xl font-bold text-zinc-50">
+              <h1 className="text-4xl font-bold text-ink">
                 Welcome to Tango Wallet
               </h1>
-              <p className="text-zinc-400 max-w-md text-lg">
+              <p className="text-ink-dim max-w-md text-lg">
                 Sign in to get a smart wallet. Every transaction you make is
                 gas-sponsored — you never pay gas fees.
               </p>
-              <p className="text-zinc-600 text-sm">
+              <p className="text-ink-faint text-sm">
                 Click &ldquo;Connect&rdquo; in the top-right to get started.
               </p>
             </div>
