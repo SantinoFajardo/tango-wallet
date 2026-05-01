@@ -1,10 +1,12 @@
-import { wallets } from '@/app/home-client';
+"use client";
+
+import { wallets } from '@/components/home-client';
 import { SUPPORTED_CHAINS } from '@/lib/chains';
 import { client } from '@/lib/client';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { ConnectButton } from 'thirdweb/react';
 
 interface LayoutProps {
@@ -12,7 +14,14 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+    const [theme, setTheme] = useState<"light" | "dark">("light");
+    useEffect(() => {
+        if (!localStorage) return;
+        const stored = localStorage.getItem("theme");
+        if (stored)
+            setTheme(stored === "dark" ? "dark" : "light");
 
+    }, []);
     return (
         <div className="flex flex-col min-h-screen bg-page">
             <nav className="flex items-center justify-between px-6 py-4 border-b border-line bg-page/80 backdrop-blur sticky top-0 z-10">
@@ -31,6 +40,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <div className="flex items-center gap-3">
                     <ThemeToggle />
                     <ConnectButton
+                        theme={theme}
                         client={client}
                         wallets={wallets}
                         chains={SUPPORTED_CHAINS}

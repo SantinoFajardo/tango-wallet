@@ -11,7 +11,6 @@ import { client } from "@/lib/client";
 import { SUPPORTED_CHAINS, DEFAULT_CHAIN } from "@/lib/chains";
 import { upsertUser } from "@/components/dashboard/actions/user";
 import { BalanceCard } from "@/components/dashboard/BalanceCard";
-import { SponsoredGasCard } from "@/components/dashboard/SponsoredGasCard";
 import { TokenTable } from "@/components/dashboard/TokenTable";
 import { TxTable } from "@/components/dashboard/TxTable";
 import { Layout } from "@/components/layout/layout";
@@ -78,10 +77,11 @@ export function HomeClient() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <BalanceCard totalUSD={totalUSD} isLoading={loadingBalance} />
-                <SponsoredGasCard address={account.address} />
-              </div>
+              <BalanceCard
+                totalUSD={totalUSD}
+                isLoading={loadingBalance}
+                address={account.address}
+              />
 
               <TokenTable
                 address={account.address}
