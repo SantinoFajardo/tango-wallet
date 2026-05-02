@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Tango Wallet",
   description: "Sponsored gas transactions powered by ThirdWeb",
+  icons: {
+    icon: "https://res.cloudinary.com/santino/image/upload/v1775853164/mate-icon_vqyjkp.webp",
+  },
 };
 
 
