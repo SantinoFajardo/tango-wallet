@@ -169,14 +169,6 @@ export function TxTable({ address, chain }: TxTableProps) {
             {dateTxs.map((tx, i) => {
               const isOut = tx.direction === "out";
               const txUrl = getExplorerTxUrl(chain, tx.tx_hash);
-              const counterparty = isOut
-                ? tx.to_address
-                  ? `To ${shortAddr(tx.to_address)}`
-                  : "Unknown"
-                : tx.from_address
-                ? `From ${shortAddr(tx.from_address)}`
-                : "Unknown";
-              console.log(tx);
               const amount = rawToDecimal(tx.value_raw, tx.decimals ?? 18);
               const isSponsored = !!tx.sponsored_gas_wei;
               const isLast = i === dateTxs.length - 1;
@@ -207,9 +199,20 @@ export function TxTable({ address, chain }: TxTableProps) {
                       </span>
                       {isSponsored && <SponsoredPill />}
                     </div>
-                    <p className="text-xs text-ink-faint mt-0.5 truncate">
-                      {counterparty}
-                    </p>
+                    <div className="flex flex-col gap-0.5 mt-0.5">
+                      {tx.from_address && (
+                        <p className="text-xs text-ink-faint truncate">
+                          <span className="opacity-60">From</span>{" "}
+                          <span className="font-mono">{shortAddr(tx.from_address)}</span>
+                        </p>
+                      )}
+                      {tx.to_address && (
+                        <p className="text-xs text-ink-faint truncate">
+                          <span className="opacity-60">To</span>{" "}
+                          <span className="font-mono">{shortAddr(tx.to_address)}</span>
+                        </p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="text-right shrink-0">
