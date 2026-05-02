@@ -73,6 +73,17 @@ function TxTypeIcon({ direction }: { direction: "in" | "out" | string }) {
   );
 }
 
+function ChainBadge({ name }: { name: string }) {
+  return (
+    <span
+      className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
+      style={{ background: "#62728822", color: "var(--ink-faint)", fontSize: 11 }}
+    >
+      {name}
+    </span>
+  );
+}
+
 function StatusBadge({ status }: { status: string }) {
   if (status === "SUCCESS") return <span className="text-ok-ink">Success</span>;
   if (status === "PENDING")
@@ -197,6 +208,7 @@ export function TxTable({ address, chain }: TxTableProps) {
                       >
                         {tx.symbol || "Unknown"}
                       </span>
+                      <ChainBadge name={chain.name ?? `Chain ${chain.id}`} />
                       {isSponsored && <SponsoredPill />}
                     </div>
                     <div className="flex flex-col gap-0.5 mt-0.5">
