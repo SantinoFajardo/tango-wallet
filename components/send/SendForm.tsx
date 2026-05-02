@@ -5,6 +5,7 @@ import {
   useActiveAccount,
   useSendAndConfirmTransaction,
   useSwitchActiveWalletChain,
+  useWalletBalance,
 } from "thirdweb/react";
 import { defineChain, getContract, prepareContractCall, prepareTransaction } from "thirdweb";
 import { isAddress, toWei } from "thirdweb/utils";
@@ -37,6 +38,14 @@ export function SendForm() {
   const [error, setError] = useState<string | null>(null);
   const [loadingChains, setLoadingChains] = useState(true);
   const [loadingTokens, setLoadingTokens] = useState(false);
+
+  const thirdwebChain = selectedChain ? defineChain(selectedChain.chain_id) : undefined;
+  const { data: tokenBalance, isLoading: balanceLoading } = useWalletBalance({
+    client,
+    chain: thirdwebChain,
+    address: account?.address,
+    tokenAddress: selectedToken?.contract_address ?? undefined,
+  });
 
   useEffect(() => {
     getChains()
@@ -71,8 +80,12 @@ export function SendForm() {
       setError("Enter a valid Ethereum address.");
       return;
     }
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) < 0) {
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       setError("Enter a valid amount.");
+      return;
+    }
+    if (tokenBalance && parseFloat(amount) > parseFloat(tokenBalance.displayValue)) {
+      setError(`Insufficient balance. You have ${tokenBalance.displayValue} ${tokenBalance.symbol}.`);
       return;
     }
 
@@ -144,17 +157,39 @@ export function SendForm() {
         inputSize="lg"
       />
 
-      <Input
-        label="Amount"
-        type="number"
-        min="0"
-        step="any"
-        placeholder="0.0"
-        value={amount}
-        onChange={(e) => setAmount(e.target.value)}
-        inputSize="lg"
-        suffix={selectedToken?.symbol}
-      />
+      <div className="space-y-1">
+        <Input
+          label="Amount"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="0.0"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          inputSize="lg"
+          suffix={selectedToken?.symbol}
+        />
+        {selectedToken && (
+          <div className="flex items-center justify-between px-1">
+            <span className="text-xs text-ink-faint">
+              {balanceLoading
+                ? "Loading balance…"
+                : tokenBalance
+                ? `Balance: ${tokenBalance.displayValue} ${tokenBalance.symbol}`
+                : "Balance unavailable"}
+            </span>
+            {tokenBalance && !balanceLoading && (
+              <button
+                type="button"
+                onClick={() => setAmount(tokenBalance.displayValue)}
+                className="text-xs font-medium text-brand hover:underline"
+              >
+                Max
+              </button>
+            )}
+          </div>
+        )}
+      </div>
 
       {error && <p className="text-err-ink text-xs">{error}</p>}
 
