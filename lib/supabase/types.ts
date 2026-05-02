@@ -31,46 +31,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      sponsored_transactions: {
-        Row: {
-          id: string;
-          user_address: string;
-          tx_hash: string;
-          chain_id: number;
-          gas_used: string;
-          gas_price: string;
-          sponsored_gas_wei: string;
-          sponsored_gas_usd: number;
-          token_symbol: string;
-          receiver_address: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_address: string;
-          tx_hash: string;
-          chain_id: number;
-          gas_used?: string;
-          gas_price?: string;
-          sponsored_gas_wei?: string;
-          sponsored_gas_usd?: number;
-          token_symbol?: string;
-          receiver_address?: string;
-          created_at?: string;
-        };
-        Update: {
-          sponsored_gas_usd?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "sponsored_transactions_user_address_fkey";
-            columns: ["user_address"];
-            referencedRelation: "users";
-            referencedColumns: ["address"];
-          },
-        ];
-      };
-    };
       chains: {
         Row: {
           id: string;
@@ -135,6 +95,100 @@ export type Database = {
           },
         ];
       };
+      balances: {
+        Row: {
+          id: string;
+          user_address: string;
+          chain_id: number;
+          contract_address: string | null;
+          symbol: string;
+          token_name: string;
+          decimals: number;
+          raw_balance: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_address: string;
+          chain_id: number;
+          contract_address?: string | null;
+          symbol?: string;
+          token_name?: string;
+          decimals?: number;
+          raw_balance?: string;
+          updated_at?: string;
+        };
+        Update: {
+          symbol?: string;
+          token_name?: string;
+          decimals?: number;
+          raw_balance?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "balances_user_address_fkey";
+            columns: ["user_address"];
+            referencedRelation: "users";
+            referencedColumns: ["address"];
+          },
+        ];
+      };
+      transactions: {
+        Row: {
+          id: string;
+          tx_hash: string;
+          chain_id: number;
+          user_address: string;
+          from_address: string;
+          to_address: string;
+          value_raw: string;
+          contract_address: string | null;
+          symbol: string;
+          token_name: string;
+          decimals: number;
+          direction: "in" | "out";
+          status: "PENDING" | "SUCCESS";
+          block_number: string;
+          block_timestamp: string;
+          gas_used: string | null;
+          gas_price: string | null;
+          sponsored_gas_wei: string | null;
+          sponsored_gas_usd: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          tx_hash: string;
+          chain_id: number;
+          user_address: string;
+          from_address: string;
+          to_address: string;
+          value_raw?: string;
+          contract_address?: string | null;
+          symbol?: string;
+          token_name?: string;
+          decimals?: number;
+          direction: "in" | "out";
+          status?: "PENDING" | "SUCCESS";
+          block_number?: string;
+          block_timestamp?: string;
+          gas_used?: string | null;
+          gas_price?: string | null;
+          sponsored_gas_wei?: string | null;
+          sponsored_gas_usd?: number | null;
+          created_at?: string;
+        };
+        Update: Record<string, never>;
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_address_fkey";
+            columns: ["user_address"];
+            referencedRelation: "users";
+            referencedColumns: ["address"];
+          },
+        ];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -144,6 +198,53 @@ export type Database = {
       };
       increment_user_gas: {
         Args: { p_address: string; p_gas_wei: string; p_gas_usd: number };
+        Returns: undefined;
+      };
+      upsert_balance_exact: {
+        Args: {
+          p_user_address: string;
+          p_chain_id: number;
+          p_contract_address: string | null;
+          p_symbol: string;
+          p_token_name: string;
+          p_decimals: number;
+          p_raw_balance: string;
+        };
+        Returns: undefined;
+      };
+      adjust_balance: {
+        Args: {
+          p_user_address: string;
+          p_chain_id: number;
+          p_contract_address: string;
+          p_symbol: string;
+          p_token_name: string;
+          p_decimals: number;
+          p_delta: string;
+        };
+        Returns: undefined;
+      };
+      upsert_transaction: {
+        Args: {
+          p_tx_hash: string;
+          p_chain_id: number;
+          p_user_address: string;
+          p_from_address: string;
+          p_to_address: string;
+          p_value_raw: string;
+          p_contract_address: string | null;
+          p_symbol: string;
+          p_token_name: string;
+          p_decimals: number;
+          p_direction: "in" | "out";
+          p_block_number: string;
+          p_block_timestamp: string;
+          p_status?: "PENDING" | "SUCCESS";
+          p_gas_used?: string | null;
+          p_gas_price?: string | null;
+          p_sponsored_gas_wei?: string | null;
+          p_sponsored_gas_usd?: number | null;
+        };
         Returns: undefined;
       };
     };

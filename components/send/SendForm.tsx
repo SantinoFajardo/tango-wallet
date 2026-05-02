@@ -112,6 +112,7 @@ export function SendForm() {
           gasUsed: receipt.gasUsed.toString(),
           gasPrice: receipt.effectiveGasPrice.toString(),
           tokenSymbol: selectedToken.symbol,
+          contractAddress: selectedToken.is_native ? null : selectedToken.contract_address,
           receiverAddress: recipient,
         }).catch(console.error);
       },

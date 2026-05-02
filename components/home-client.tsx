@@ -85,7 +85,6 @@ export function HomeClient() {
 
               <TokenTable
                 address={account.address}
-                chain={activeChain}
                 onTotalChange={handleTotalChange}
               />
 

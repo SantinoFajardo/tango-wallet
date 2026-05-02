@@ -7,9 +7,10 @@ export interface SponsoredTxInput {
   txHash: string;
   chainId: number;
   chainNativeSymbol: string;
-  gasUsed: string;   // bigint serialized as string
-  gasPrice: string;  // bigint serialized as string (effectiveGasPrice)
+  gasUsed: string;
+  gasPrice: string;
   tokenSymbol: string;
+  contractAddress: string | null;
   receiverAddress: string;
 }
 
@@ -27,27 +28,29 @@ export async function recordSponsoredTransaction(
   const sponsoredGasEth = Number(sponsoredGasWei) / 1e18;
   const sponsoredGasUsd = sponsoredGasEth * nativePrice;
 
-  // Insert the transaction row (ignore if already recorded via the unique constraint).
-  const { error: txError } = await supabase
-    .from("sponsored_transactions")
-    .upsert(
-      {
-        user_address: userAddress,
-        tx_hash: tx.txHash,
-        chain_id: tx.chainId,
-        gas_used: tx.gasUsed,
-        gas_price: tx.gasPrice,
-        sponsored_gas_wei: sponsoredGasWei.toString(),
-        sponsored_gas_usd: sponsoredGasUsd,
-        token_symbol: tx.tokenSymbol,
-        receiver_address: tx.receiverAddress,
-      },
-      { onConflict: "tx_hash,chain_id", ignoreDuplicates: true },
-    );
+  const { error: txError } = await supabase.rpc("upsert_transaction", {
+    p_tx_hash: tx.txHash,
+    p_chain_id: tx.chainId,
+    p_user_address: userAddress,
+    p_from_address: userAddress,
+    p_to_address: tx.receiverAddress,
+    p_value_raw: "0",
+    p_contract_address: tx.contractAddress,
+    p_symbol: tx.tokenSymbol,
+    p_token_name: tx.tokenSymbol,
+    p_decimals: 18,
+    p_direction: "out",
+    p_block_number: "",
+    p_block_timestamp: "",
+    p_status: "PENDING",
+    p_gas_used: tx.gasUsed,
+    p_gas_price: tx.gasPrice,
+    p_sponsored_gas_wei: sponsoredGasWei.toString(),
+    p_sponsored_gas_usd: sponsoredGasUsd,
+  });
 
   if (txError) throw new Error(`recordSponsoredTransaction insert: ${txError.message}`);
 
-  // Atomically increment the user's gas totals using a Postgres RPC.
   const { error: rpcError } = await supabase.rpc("increment_user_gas", {
     p_address: userAddress,
     p_gas_wei: sponsoredGasWei.toString(),
