@@ -7,11 +7,22 @@ import {
   useSwitchActiveWalletChain,
   useWalletBalance,
 } from "thirdweb/react";
-import { defineChain, getContract, prepareContractCall, prepareTransaction } from "thirdweb";
+import {
+  defineChain,
+  getContract,
+  prepareContractCall,
+  prepareTransaction,
+} from "thirdweb";
 import { isAddress, toWei } from "thirdweb/utils";
 import { client } from "@/lib/client";
-import { getChains, getTokensWithBalances } from "@/components/dashboard/actions/assets";
-import type { ChainRow, TokenWithBalance } from "@/components/dashboard/actions/assets";
+import {
+  getChains,
+  getTokensWithBalances,
+} from "@/components/dashboard/actions/assets";
+import type {
+  ChainRow,
+  TokenWithBalance,
+} from "@/components/dashboard/actions/assets";
 import { recordSponsoredTransaction } from "@/components/dashboard/actions/transactions";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -23,7 +34,10 @@ function parseTokenAmount(amount: string, decimals: number): bigint {
 }
 
 function fmt(n: number, d = 2) {
-  return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: d,
+    maximumFractionDigits: d,
+  });
 }
 
 function shortAddr(addr: string) {
@@ -49,8 +63,8 @@ function StepBar({ current }: { current: number }) {
                   done
                     ? "bg-ok-ink text-white"
                     : active
-                      ? "bg-brand text-white ring-4 ring-tint"
-                      : "bg-layer text-ink-faint border-2 border-line",
+                    ? "bg-brand text-white ring-4 ring-tint"
+                    : "bg-layer text-ink-faint border-2 border-line",
                 ].join(" ")}
               >
                 {done ? "✓" : i + 1}
@@ -58,7 +72,11 @@ function StepBar({ current }: { current: number }) {
               <span
                 className={[
                   "text-[11px] font-semibold whitespace-nowrap",
-                  active ? "text-brand" : done ? "text-ok-ink" : "text-ink-faint",
+                  active
+                    ? "text-brand"
+                    : done
+                    ? "text-ok-ink"
+                    : "text-ink-faint",
                 ].join(" ")}
               >
                 {step}
@@ -67,7 +85,7 @@ function StepBar({ current }: { current: number }) {
             {i < STEPS.length - 1 && (
               <div
                 className={[
-                  "flex-1 h-0.5 mb-[18px] mx-1 transition-colors",
+                  "flex-1 h-0.5 mb-4.5 mx-1 transition-colors",
                   done ? "bg-ok-ink" : "bg-line",
                 ].join(" ")}
               />
@@ -95,19 +113,19 @@ function ChainStep({
   return (
     <div>
       <h2 className="text-[22px] font-bold text-ink mb-1.5">Select network</h2>
-      <p className="text-sm text-ink-faint mb-7">Choose which blockchain to send from.</p>
+      <p className="text-sm text-ink-faint mb-7">
+        Choose which blockchain to send from.
+      </p>
       <div className="flex flex-col gap-3">
         {chains.map((chain) => {
           const active = selected?.id === chain.id;
           const count = tokenCounts.get(chain.chain_id) ?? 0;
-          console.log(chain)
-          console.log(tokenCounts)
           return (
             <button
               key={chain.id}
               onClick={() => onSelect(chain)}
               className={[
-                "flex items-center gap-4 px-5 py-[18px] rounded-2xl border-2 text-left transition-all cursor-pointer",
+                "flex items-center gap-4 px-5 py-4.5 rounded-2xl border-2 text-left transition-all cursor-pointer",
                 active
                   ? "border-brand bg-tint shadow-[0_0_0_4px_color-mix(in_srgb,var(--tint)_50%,transparent)]"
                   : "border-line bg-surface hover:border-line-hi",
@@ -131,7 +149,7 @@ function ChainStep({
               </div>
               <div
                 className={[
-                  "w-[22px] h-[22px] rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors",
+                  "w-5.5 h-5.5 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 transition-colors",
                   active ? "border-brand bg-brand text-white" : "border-line",
                 ].join(" ")}
               >
@@ -162,7 +180,9 @@ function TokenStep({
     return (
       <div>
         <h2 className="text-[22px] font-bold text-ink mb-1.5">Select asset</h2>
-        <p className="text-sm text-ink-faint">No assets with a balance on {chain?.name ?? "this chain"}.</p>
+        <p className="text-sm text-ink-faint">
+          No assets with a balance on {chain?.name ?? "this chain"}.
+        </p>
       </div>
     );
   }
@@ -171,7 +191,8 @@ function TokenStep({
       <h2 className="text-[22px] font-bold text-ink mb-1.5">Select asset</h2>
       <p className="text-sm text-ink-faint mb-7">
         Sending from{" "}
-        <span className="text-brand font-semibold">{chain?.name}</span>. Pick a token.
+        <span className="text-brand font-semibold">{chain?.name}</span>. Pick a
+        token.
       </p>
       <div className="flex flex-col gap-2.5">
         {tokens.map((token) => {
@@ -196,15 +217,25 @@ function TokenStep({
                 {token.symbol.slice(0, 1)}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="text-[15px] font-bold text-ink">{token.symbol}</div>
-                <div className="text-[13px] text-ink-faint mt-0.5">{token.name}</div>
+                <div className="text-[15px] font-bold text-ink">
+                  {token.symbol}
+                </div>
+                <div className="text-[13px] text-ink-faint mt-0.5">
+                  {token.name}
+                </div>
               </div>
               <div className="text-right">
                 <div className="text-[15px] font-semibold text-ink font-mono">
-                  {fmt(token.display_balance, token.display_balance < 10 ? 4 : 2)} {token.symbol}
+                  {fmt(
+                    token.display_balance,
+                    token.display_balance < 10 ? 4 : 2
+                  )}{" "}
+                  {token.symbol}
                 </div>
                 {token.usd_value > 0 && (
-                  <div className="text-xs text-ink-faint mt-0.5">${fmt(token.usd_value)}</div>
+                  <div className="text-xs text-ink-faint mt-0.5">
+                    ${fmt(token.usd_value)}
+                  </div>
                 )}
               </div>
             </button>
@@ -237,14 +268,21 @@ function AmountStep({
   }, []);
 
   const numDisplay = parseFloat(display) || 0;
-  const tokenAmt = mode === "token" ? numDisplay : token.price_usd > 0 ? numDisplay / token.price_usd : 0;
-  const maxBalance = liveBalanceDisplay ? parseFloat(liveBalanceDisplay) : token.display_balance;
+  const tokenAmt =
+    mode === "token"
+      ? numDisplay
+      : token.price_usd > 0
+      ? numDisplay / token.price_usd
+      : 0;
+  const maxBalance = liveBalanceDisplay
+    ? parseFloat(liveBalanceDisplay)
+    : token.display_balance;
   const isOver = tokenAmt > maxBalance && tokenAmt > 0;
   const pct = maxBalance > 0 ? Math.min(tokenAmt / maxBalance, 1) * 100 : 0;
 
   // Sync to parent always in token units
   useEffect(() => {
-    setAmount(tokenAmt > 0 ? String(+(tokenAmt.toFixed(8))) : "");
+    setAmount(tokenAmt > 0 ? String(+tokenAmt.toFixed(8)) : "");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [display, mode]);
 
@@ -252,11 +290,11 @@ function AmountStep({
     const n = parseFloat(display) || 0;
     if (mode === "token") {
       const usd = n * token.price_usd;
-      setDisplay(usd > 0 ? String(+(usd.toFixed(2))) : "");
+      setDisplay(usd > 0 ? String(+usd.toFixed(2)) : "");
       setMode("usd");
     } else {
       const tok = token.price_usd > 0 ? n / token.price_usd : 0;
-      setDisplay(tok > 0 ? String(+(tok.toFixed(6))) : "");
+      setDisplay(tok > 0 ? String(+tok.toFixed(6)) : "");
       setMode("token");
     }
   }
@@ -274,7 +312,8 @@ function AmountStep({
       <p className="text-sm text-ink-faint mb-7">
         Available:{" "}
         <span className="text-ink font-semibold font-mono">
-          {liveBalanceDisplay ?? fmt(token.display_balance, token.display_balance < 10 ? 4 : 2)}{" "}
+          {liveBalanceDisplay ??
+            fmt(token.display_balance, token.display_balance < 10 ? 4 : 2)}{" "}
           {token.symbol}
         </span>
       </p>
@@ -314,18 +353,23 @@ function AmountStep({
         </div>
 
         {token.price_usd > 0 && (
-          <p className="text-sm text-ink-faint pl-[52px]">
+          <p className="text-sm text-ink-faint pl-13">
             ≈{" "}
             {mode === "token"
               ? `$${fmt(numDisplay * token.price_usd)} USD`
-              : `${fmt(numDisplay / token.price_usd, numDisplay / token.price_usd < 10 ? 6 : 4)} ${token.symbol}`}
+              : `${fmt(
+                  numDisplay / token.price_usd,
+                  numDisplay / token.price_usd < 10 ? 6 : 4
+                )} ${token.symbol}`}
           </p>
         )}
 
         {/* Progress bar */}
         <div className="mt-4 h-1 rounded-full bg-layer overflow-hidden">
           <div
-            className={`h-full rounded-full transition-all ${isOver ? "bg-err-ink" : "bg-brand"}`}
+            className={`h-full rounded-full transition-all ${
+              isOver ? "bg-err-ink" : "bg-brand"
+            }`}
             style={{ width: `${pct}%` }}
           />
         </div>
@@ -334,7 +378,8 @@ function AmountStep({
       {isOver && (
         <div className="px-4 py-2.5 rounded-xl bg-err-wash border border-err-rim text-err-ink text-[13px] font-medium mb-4">
           Amount exceeds your balance of{" "}
-          {fmt(token.display_balance, token.display_balance < 10 ? 4 : 2)} {token.symbol}
+          {fmt(token.display_balance, token.display_balance < 10 ? 4 : 2)}{" "}
+          {token.symbol}
         </div>
       )}
 
@@ -343,12 +388,14 @@ function AmountStep({
           <button
             key={label}
             onClick={() => {
-              const max = liveBalanceDisplay ? parseFloat(liveBalanceDisplay) : maxBalance;
+              const max = liveBalanceDisplay
+                ? parseFloat(liveBalanceDisplay)
+                : maxBalance;
               const val = max * p;
               setDisplay(
                 mode === "token"
-                  ? String(+(val.toFixed(6)))
-                  : String(+(val * token.price_usd).toFixed(2)),
+                  ? String(+val.toFixed(6))
+                  : String(+(val * token.price_usd).toFixed(2))
               );
             }}
             className="flex-1 py-2.5 rounded-xl bg-surface border border-line text-ink-dim text-[13px] font-semibold cursor-pointer hover:border-brand hover:text-brand transition-colors"
@@ -383,13 +430,21 @@ function RecipientStep({
 
   return (
     <div>
-      <h2 className="text-[22px] font-bold text-ink mb-1.5">Recipient address</h2>
-      <p className="text-sm text-ink-faint mb-7">Enter a wallet address to send to.</p>
+      <h2 className="text-[22px] font-bold text-ink mb-1.5">
+        Recipient address
+      </h2>
+      <p className="text-sm text-ink-faint mb-7">
+        Enter a wallet address to send to.
+      </p>
 
       <div
         className={[
           "bg-surface rounded-2xl border-2 flex items-center gap-2.5 pl-4 pr-1.5 mb-5 transition-colors",
-          hasInput ? (valid ? "border-ok-ink" : "border-err-ink") : "border-line",
+          hasInput
+            ? valid
+              ? "border-ok-ink"
+              : "border-err-ink"
+            : "border-line",
         ].join(" ")}
       >
         <input
@@ -457,7 +512,9 @@ function RecipientStep({
                 <span className="flex-1 text-[13px] font-mono text-ink truncate">
                   {shortAddr(addr)}
                 </span>
-                {recipient === addr && <span className="text-brand text-sm">✓</span>}
+                {recipient === addr && (
+                  <span className="text-brand text-sm">✓</span>
+                )}
               </button>
             ))}
           </div>
@@ -485,8 +542,12 @@ function ReviewStep({
 
   return (
     <div>
-      <h2 className="text-[22px] font-bold text-ink mb-1.5">Review & confirm</h2>
-      <p className="text-sm text-ink-faint mb-7">Double-check the details before sending.</p>
+      <h2 className="text-[22px] font-bold text-ink mb-1.5">
+        Review & confirm
+      </h2>
+      <p className="text-sm text-ink-faint mb-7">
+        Double-check the details before sending.
+      </p>
 
       <div className="bg-surface rounded-2xl border border-line overflow-hidden mb-5">
         {/* Amount hero */}
@@ -497,9 +558,13 @@ function ReviewStep({
           <div className="text-[44px] font-bold text-ink leading-none tracking-tight font-mono">
             {fmt(numAmount, numAmount < 10 ? 6 : 4)}
           </div>
-          <div className="text-xl font-bold text-brand mt-0.5">{token.symbol}</div>
+          <div className="text-xl font-bold text-brand mt-0.5">
+            {token.symbol}
+          </div>
           {token.price_usd > 0 && (
-            <div className="text-[15px] text-ink-faint mt-1.5">≈ ${fmt(usdVal)} USD</div>
+            <div className="text-[15px] text-ink-faint mt-1.5">
+              ≈ ${fmt(usdVal)} USD
+            </div>
           )}
         </div>
 
@@ -513,14 +578,18 @@ function ReviewStep({
           <p className="text-[11px] font-bold text-ink-faint uppercase tracking-widest mb-1.5">
             To
           </p>
-          <p className="text-[13px] font-mono text-ink font-medium break-all">{recipient}</p>
+          <p className="text-[13px] font-mono text-ink font-medium break-all">
+            {recipient}
+          </p>
         </div>
 
         {/* Detail rows */}
         <div className="divide-y divide-line">
           <div className="flex items-center justify-between px-6 py-3.5">
             <span className="text-[13px] text-ink-faint">Network</span>
-            <span className="text-[13px] font-semibold text-brand">{chain.name}</span>
+            <span className="text-[13px] font-semibold text-brand">
+              {chain.name}
+            </span>
           </div>
           <div className="flex items-center justify-between px-6 py-3.5">
             <span className="text-[13px] text-ink-faint">Asset</span>
@@ -532,7 +601,9 @@ function ReviewStep({
           <div className="flex items-center justify-between px-6 py-3.5 bg-ok-wash">
             <span className="text-[13px] text-ink-faint">Gas fee</span>
             <div className="flex items-center gap-2">
-              <span className="text-[13px] text-ink-faint line-through">~$0.80</span>
+              <span className="text-[13px] text-ink-faint line-through">
+                ~$0.80
+              </span>
               <span className="px-2.5 py-1 rounded-full bg-ok-ink text-white text-[11px] font-bold tracking-wide">
                 ⛽ FREE
               </span>
@@ -549,7 +620,8 @@ function ReviewStep({
           color: "oklch(40% 0.12 60)",
         }}
       >
-        ⚠️ Transactions are irreversible. Verify the recipient address carefully.
+        ⚠️ Transactions are irreversible. Verify the recipient address
+        carefully.
       </div>
     </div>
   );
@@ -595,7 +667,8 @@ function SuccessScreen({
             {fmt(numAmount, numAmount < 10 ? 6 : 4)} {token.symbol}
           </div>
           <div className="text-[13px] text-ink-faint">
-            {token.price_usd > 0 && `≈ $${fmt(usdVal)} · `}to {shortAddr(recipient)}
+            {token.price_usd > 0 && `≈ $${fmt(usdVal)} · `}to{" "}
+            {shortAddr(recipient)}
           </div>
         </div>
         <div className="ml-2 px-2.5 py-1 rounded-full bg-ok-ink text-white text-[11px] font-bold">
@@ -607,7 +680,9 @@ function SuccessScreen({
         <p className="text-[11px] font-bold text-ink-faint uppercase tracking-widest mb-1.5">
           Transaction hash
         </p>
-        <p className="text-xs font-mono text-ink-dim break-all leading-relaxed">{txHash}</p>
+        <p className="text-xs font-mono text-ink-dim break-all leading-relaxed">
+          {txHash}
+        </p>
         {chain.explorer_url && (
           <a
             href={`${chain.explorer_url}/tx/${txHash}`}
@@ -649,11 +724,15 @@ export function SendForm() {
   const [done, setDone] = useState(false);
 
   const [chains, setChains] = useState<ChainRow[]>([]);
-  const [tokensByChain, setTokensByChain] = useState<Map<number, TokenWithBalance[]>>(new Map());
+  const [tokensByChain, setTokensByChain] = useState<
+    Map<number, TokenWithBalance[]>
+  >(new Map());
   const [loadingChains, setLoadingChains] = useState(true);
 
   const [selectedChain, setSelectedChain] = useState<ChainRow | null>(null);
-  const [selectedToken, setSelectedToken] = useState<TokenWithBalance | null>(null);
+  const [selectedToken, setSelectedToken] = useState<TokenWithBalance | null>(
+    null
+  );
   const [amount, setAmount] = useState("");
   const [recipient, setRecipient] = useState("");
   const [txHash, setTxHash] = useState("");
@@ -661,7 +740,9 @@ export function SendForm() {
 
   const [recentAddresses, setRecentAddresses] = useState<string[]>([]);
 
-  const thirdwebChain = selectedChain ? defineChain(selectedChain.chain_id) : undefined;
+  const thirdwebChain = selectedChain
+    ? defineChain(selectedChain.chain_id)
+    : undefined;
   const { data: liveBalance } = useWalletBalance({
     client,
     chain: thirdwebChain,
@@ -676,13 +757,18 @@ export function SendForm() {
         setChains(data);
         const entries = await Promise.all(
           data.map(async (chain) => {
-            const tokens = await getTokensWithBalances(account.address, chain.chain_id);
+            const tokens = await getTokensWithBalances(
+              account.address,
+              chain.chain_id
+            );
             return [chain.chain_id, tokens] as [number, TokenWithBalance[]];
-          }),
+          })
         );
         setTokensByChain(new Map(entries));
       })
-      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Failed to load chains"))
+      .catch((e: unknown) =>
+        setError(e instanceof Error ? e.message : "Failed to load chains")
+      )
       .finally(() => setLoadingChains(false));
   }, [account]);
 
@@ -690,18 +776,23 @@ export function SendForm() {
     try {
       const stored = localStorage.getItem("tango_recent_recipients");
       if (stored) setRecentAddresses(JSON.parse(stored) as string[]);
-    } catch { }
+    } catch {}
   }, []);
 
   function saveRecipient(addr: string) {
-    const updated = [addr, ...recentAddresses.filter((a) => a !== addr)].slice(0, 3);
+    const updated = [addr, ...recentAddresses.filter((a) => a !== addr)].slice(
+      0,
+      3
+    );
     setRecentAddresses(updated);
     localStorage.setItem("tango_recent_recipients", JSON.stringify(updated));
   }
 
-  const tokensForChain = selectedChain ? (tokensByChain.get(selectedChain.chain_id) ?? []) : [];
+  const tokensForChain = selectedChain
+    ? tokensByChain.get(selectedChain.chain_id) ?? []
+    : [];
   const tokenCounts = new Map<number, number>(
-    chains.map((c) => [c.chain_id, tokensByChain.get(c.chain_id)?.length ?? 0]),
+    chains.map((c) => [c.chain_id, tokensByChain.get(c.chain_id)?.length ?? 0])
   );
 
   const canProceedFns = [
@@ -712,7 +803,7 @@ export function SendForm() {
       if (!n || n <= 0) return false;
       const max = liveBalance
         ? parseFloat(liveBalance.displayValue)
-        : (selectedToken?.display_balance ?? 0);
+        : selectedToken?.display_balance ?? 0;
       return n <= max;
     },
     () => isAddress(recipient),
@@ -748,16 +839,25 @@ export function SendForm() {
     await switchChain(chain);
 
     const tx = selectedToken.is_native
-      ? prepareTransaction({ to: recipient, value: toWei(amount), chain, client })
-      : prepareContractCall({
-        contract: getContract({
-          client,
+      ? prepareTransaction({
+          to: recipient,
+          value: toWei(amount),
           chain,
-          address: selectedToken.contract_address!,
-        }),
-        method: "function transfer(address to, uint256 amount) returns (bool)",
-        params: [recipient as `0x${string}`, parseTokenAmount(amount, selectedToken.decimals)],
-      });
+          client,
+        })
+      : prepareContractCall({
+          contract: getContract({
+            client,
+            chain,
+            address: selectedToken.contract_address!,
+          }),
+          method:
+            "function transfer(address to, uint256 amount) returns (bool)",
+          params: [
+            recipient as `0x${string}`,
+            parseTokenAmount(amount, selectedToken.decimals),
+          ],
+        });
 
     sendAndConfirm(tx, {
       onSuccess: (receipt) => {
@@ -767,15 +867,22 @@ export function SendForm() {
         recordSponsoredTransaction(account.address, {
           txHash: receipt.transactionHash,
           chainId: selectedChain.chain_id,
-          chainNativeSymbol: selectedToken.is_native ? selectedToken.symbol : "ETH",
+          chainNativeSymbol: selectedToken.is_native
+            ? selectedToken.symbol
+            : "ETH",
           gasUsed: receipt.gasUsed.toString(),
           gasPrice: receipt.effectiveGasPrice.toString(),
           tokenSymbol: selectedToken.symbol,
-          contractAddress: selectedToken.is_native ? null : selectedToken.contract_address,
+          contractAddress: selectedToken.is_native
+            ? null
+            : selectedToken.contract_address,
           receiverAddress: recipient,
+          amount: parseTokenAmount(amount, selectedToken.decimals).toString(),
+          tokenDecimals: selectedToken.decimals,
         }).catch(console.error);
       },
-      onError: (e) => setError(e.message?.slice(0, 200) ?? "Transaction failed"),
+      onError: (e) =>
+        setError(e.message?.slice(0, 200) ?? "Transaction failed"),
     });
   }
 
@@ -827,7 +934,7 @@ export function SendForm() {
       <StepBar current={step} />
 
       <div className="bg-surface rounded-[20px] p-8 border border-line shadow-lg">
-        <div className="min-h-[280px]">
+        <div className="min-h-70">
           {step === 0 && (
             <ChainStep
               chains={chains}

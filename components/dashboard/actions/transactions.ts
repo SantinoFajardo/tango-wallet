@@ -12,11 +12,13 @@ export interface SponsoredTxInput {
   tokenSymbol: string;
   contractAddress: string | null;
   receiverAddress: string;
+  amount: string;
+  tokenDecimals: number;
 }
 
 export async function recordSponsoredTransaction(
   userAddress: string,
-  tx: SponsoredTxInput,
+  tx: SponsoredTxInput
 ): Promise<void> {
   const supabase = createServerClient();
 
@@ -34,11 +36,11 @@ export async function recordSponsoredTransaction(
     p_user_address: userAddress,
     p_from_address: userAddress,
     p_to_address: tx.receiverAddress,
-    p_value_raw: "0",
+    p_value_raw: tx.amount,
     p_contract_address: tx.contractAddress,
     p_symbol: tx.tokenSymbol,
     p_token_name: tx.tokenSymbol,
-    p_decimals: 18,
+    p_decimals: tx.tokenDecimals,
     p_direction: "out",
     p_block_number: "",
     p_block_timestamp: "",
@@ -49,7 +51,8 @@ export async function recordSponsoredTransaction(
     p_sponsored_gas_usd: sponsoredGasUsd,
   });
 
-  if (txError) throw new Error(`recordSponsoredTransaction insert: ${txError.message}`);
+  if (txError)
+    throw new Error(`recordSponsoredTransaction insert: ${txError.message}`);
 
   const { error: rpcError } = await supabase.rpc("increment_user_gas", {
     p_address: userAddress,
@@ -57,5 +60,29 @@ export async function recordSponsoredTransaction(
     p_gas_usd: sponsoredGasUsd,
   });
 
-  if (rpcError) throw new Error(`recordSponsoredTransaction rpc: ${rpcError.message}`);
+  if (rpcError)
+    throw new Error(`recordSponsoredTransaction rpc: ${rpcError.message}`);
 }
+
+export const getUserTransactions = async (
+  userAddress: string,
+  chainId?: number
+) => {
+  const supabase = createServerClient();
+
+  let query = supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_address", userAddress)
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (chainId !== undefined) {
+    query = query.eq("chain_id", chainId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+  return data;
+};
