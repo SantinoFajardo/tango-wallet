@@ -107,7 +107,7 @@ export function BalanceCard({ totalUSD, isLoading, address }: BalanceCardProps) 
         <div className="flex gap-3 mt-6">
           {[
             { label: "⬆ Send", onClick: () => router.push("/send") },
-            { label: "⬇ Receive", onClick: () => {} },
+            { label: "⬇ Receive", onClick: () => router.push("/receive") },
           ].map(({ label, onClick }) => (
             <button
               key={label}
