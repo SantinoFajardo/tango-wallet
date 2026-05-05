@@ -72,7 +72,7 @@ export function HomeClient() {
                 gas-sponsored — you never pay gas fees.
               </p>
               <p className="text-ink-faint text-sm">
-                Click &ldquo;Connect&rdquo; in the top-right to get started.
+                Click &ldquo;Sign in&rdquo; in the top-right to get started.
               </p>
             </div>
           ) : (
