@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Chain } from "thirdweb";
 import { format, isToday, isYesterday } from "date-fns";
 import { getUserTransactions } from "./actions/transactions";
+import { SUPPORTED_CHAINS } from "@/lib/chains";
 
 type DbTx = Awaited<ReturnType<typeof getUserTransactions>>[number];
 
@@ -28,6 +29,10 @@ function rawToDecimal(raw: string, decimals = 18): string {
 function getExplorerTxUrl(chain: Chain, hash: string): string | null {
   const url = chain.blockExplorers?.[0]?.url;
   return url ? `${url}/tx/${hash}` : null;
+}
+
+function resolveChain(chainId: number): Chain {
+  return SUPPORTED_CHAINS.find((c) => c.id === chainId) ?? ({ id: chainId, name: `Chain ${chainId}` } as Chain);
 }
 
 function formatDateLabel(dateKey: string): string {
@@ -140,7 +145,7 @@ export function TxTable({ address, chain }: TxTableProps) {
     setErrorMsg(null);
     setTxs([]);
 
-    getUserTransactions(address, chain.id)
+    getUserTransactions(address)
       .then(setTxs)
       .catch((e: unknown) =>
         setErrorMsg(
@@ -148,7 +153,7 @@ export function TxTable({ address, chain }: TxTableProps) {
         )
       )
       .finally(() => setLoading(false));
-  }, [address, chain.id]);
+  }, [address]);
 
   const grouped = useMemo(() => groupByDate(txs), [txs]);
 
@@ -168,7 +173,7 @@ export function TxTable({ address, chain }: TxTableProps) {
         <p className="px-5 py-8 text-center text-xs text-err-ink">{errorMsg}</p>
       ) : txs.length === 0 ? (
         <p className="px-5 py-8 text-center text-ink-faint">
-          No transactions found on this chain
+          No transactions yet
         </p>
       ) : (
         grouped.map(([dateKey, dateTxs]) => (
@@ -179,7 +184,8 @@ export function TxTable({ address, chain }: TxTableProps) {
 
             {dateTxs.map((tx, i) => {
               const isOut = tx.direction === "out";
-              const txUrl = getExplorerTxUrl(chain, tx.tx_hash);
+              const txChain = resolveChain(tx.chain_id);
+              const txUrl = getExplorerTxUrl(txChain, tx.tx_hash);
               const amount = rawToDecimal(tx.value_raw, tx.decimals ?? 18);
               const isSponsored = !!tx.sponsored_gas_wei;
               const isLast = i === dateTxs.length - 1;
@@ -208,7 +214,7 @@ export function TxTable({ address, chain }: TxTableProps) {
                       >
                         {tx.symbol || "Unknown"}
                       </span>
-                      <ChainBadge name={chain.name ?? `Chain ${chain.id}`} />
+                      <ChainBadge name={txChain.name ?? `Chain ${tx.chain_id}`} />
                       {isSponsored && <SponsoredPill />}
                     </div>
                     <div className="flex flex-col gap-0.5 mt-0.5">
