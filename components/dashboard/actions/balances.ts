@@ -519,7 +519,25 @@ export async function refreshAllBalances(userAddress: string) {
     .select()
     .eq("user_address", userAddress);
 
-  return data ?? [];
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+
+  const chainIds = [...new Set(rows.map((b) => b.chain_id))];
+  const { data: tokens } = await supabase
+    .from("tokens")
+    .select("chain_id, contract_address, image_url, is_native")
+    .in("chain_id", chainIds);
+
+  const tokenMap = new Map<string, string>();
+  for (const t of tokens ?? []) {
+    const key = t.is_native ? `${t.chain_id}:null` : `${t.chain_id}:${t.contract_address}`;
+    tokenMap.set(key, t.image_url ?? "");
+  }
+
+  return rows.map((b) => {
+    const key = b.contract_address === null ? `${b.chain_id}:null` : `${b.chain_id}:${b.contract_address}`;
+    return { ...b, image_url: tokenMap.get(key) ?? "" };
+  });
 }
 
 export async function getTokenUserBalance(token_id: string) {
