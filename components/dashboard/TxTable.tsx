@@ -87,8 +87,8 @@ function ChainBadge({ name }: { name: string }) {
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
       style={{
-        background: "#62728822",
-        color: "var(--ink-faint)",
+        background: "var(--tint)",
+        color: "var(--tint-ink)",
         fontSize: 11,
       }}
     >
