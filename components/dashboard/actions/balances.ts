@@ -7,6 +7,16 @@ interface WebhookBlock {
   timestamp: string;
 }
 
+interface NormalTx {
+  hash: string;
+  fromAddress: string;
+  toAddress: string;
+  value: string;
+  gasPrice: string;
+  receiptGasUsed: string;
+  receiptStatus: string;
+}
+
 interface InternalTx {
   from: string;
   to: string;
@@ -34,6 +44,7 @@ interface NativeBalance {
 export interface WebhookPayload {
   chainId: string;
   block: WebhookBlock;
+  txs: NormalTx[];
   txsInternal: InternalTx[];
   erc20Transfers: Erc20Transfer[];
   nativeBalances: NativeBalance[];
@@ -50,6 +61,10 @@ export async function updateOrCreateTokenUserBalances(
   payload.nativeBalances.forEach((nb) =>
     allAddresses.add(nb.address.toLowerCase())
   );
+  payload.txs.forEach((tx) => {
+    allAddresses.add(tx.fromAddress.toLowerCase());
+    if (tx.toAddress) allAddresses.add(tx.toAddress.toLowerCase());
+  });
   payload.txsInternal.forEach((tx) => {
     allAddresses.add(tx.from.toLowerCase());
     allAddresses.add(tx.to.toLowerCase());
@@ -61,11 +76,11 @@ export async function updateOrCreateTokenUserBalances(
 
   if (allAddresses.size === 0) return;
 
-  // Only process addresses that are registered users in our DB.
+  // Case-insensitive address lookup — Moralis sends lowercase, DB stores checksum.
   const { data: registeredUsers, error: usersError } = await supabase
     .from("users")
     .select("address")
-    .in("address", [...allAddresses]);
+    .or([...allAddresses].map((a) => `address.ilike.${a}`).join(","));
 
   if (usersError) {
     console.error(
@@ -75,9 +90,12 @@ export async function updateOrCreateTokenUserBalances(
     return;
   }
 
-  const monitoredAddresses = new Set(
-    (registeredUsers ?? []).map((u) => u.address.toLowerCase())
-  );
+  // Map lowercase → exact DB address so FK writes use the stored casing.
+  const dbAddressMap = new Map<string, string>();
+  for (const u of registeredUsers ?? []) {
+    dbAddressMap.set(u.address.toLowerCase(), u.address);
+  }
+  const monitoredAddresses = new Set(dbAddressMap.keys());
 
   if (monitoredAddresses.size === 0) return;
 
@@ -100,13 +118,17 @@ export async function updateOrCreateTokenUserBalances(
   const nativeName = nativeToken?.name ?? "";
   const nativeDecimals = nativeToken?.decimals ?? 18;
 
+  // Tracks addresses whose native balance was set exactly (idempotent).
+  // Addresses NOT in this set will receive a delta adjustment from tx values.
+  const exactBalanceUpdated = new Set<string>();
+
   // ── Native balances (exact value, only present when native transfer occurred) ─
   for (const nb of payload.nativeBalances) {
     const address = nb.address.toLowerCase();
     if (!monitoredAddresses.has(address)) continue;
 
     const { error } = await supabase.rpc("upsert_balance_exact", {
-      p_user_address: address,
+      p_user_address: dbAddressMap.get(address) ?? address,
       p_chain_id: chainId,
       p_contract_address: null,
       p_symbol: nativeSymbol,
@@ -119,61 +141,146 @@ export async function updateOrCreateTokenUserBalances(
         `[webhook] upsert_balance_exact failed for ${address}:`,
         error.message
       );
+    } else {
+      exactBalanceUpdated.add(address);
     }
   }
 
-  // ── Native transactions (from txsInternal) ────────────────────────────────
-  for (const tx of payload.txsInternal) {
-    const from = tx.from.toLowerCase();
-    const to = tx.to.toLowerCase();
+  // Dedup key: prevents the same (hash, user, direction) from being written
+  // twice when it appears in both txs and txsInternal.
+  const writtenNativeTxs = new Set<string>();
+  const nativeKey = (hash: string, user: string, dir: string) =>
+    `${hash}:${user}:${dir}`;
+
+  async function adjustNativeBalance(userAddress: string, delta: string) {
+    const dbAddress = dbAddressMap.get(userAddress) ?? userAddress;
+
+    const { data: existing, error: fetchErr } = await supabase
+      .from("balances")
+      .select("id, raw_balance")
+      .eq("user_address", dbAddress)
+      .eq("chain_id", chainId)
+      .is("contract_address", null)
+      .maybeSingle();
+
+    if (fetchErr) {
+      console.error(`[webhook] native balance fetch failed for ${userAddress}:`, fetchErr.message);
+      return;
+    }
+
+    const current = BigInt(existing?.raw_balance ?? "0");
+    const isNeg = delta.startsWith("-");
+    const abs = BigInt(isNeg ? delta.slice(1) : delta);
+    const next = isNeg
+      ? current > abs ? current - abs : 0n
+      : current + abs;
+
+    if (existing) {
+      const { error } = await supabase
+        .from("balances")
+        .update({ raw_balance: next.toString(), updated_at: new Date().toISOString() })
+        .eq("id", existing.id);
+      if (error) console.error(`[webhook] native balance update failed for ${userAddress}:`, error.message);
+    } else {
+      const { error } = await supabase
+        .from("balances")
+        .insert({
+          user_address: dbAddress,
+          chain_id: chainId,
+          contract_address: null,
+          symbol: nativeSymbol,
+          token_name: nativeName,
+          decimals: nativeDecimals,
+          raw_balance: next.toString(),
+        });
+      if (error) console.error(`[webhook] native balance insert failed for ${userAddress}:`, error.message);
+    }
+  }
+
+  async function upsertNativeTx(
+    hash: string,
+    from: string,
+    to: string,
+    value: string,
+    direction: "in" | "out",
+    userAddress: string
+  ) {
+    const key = nativeKey(hash, userAddress, direction);
+    if (writtenNativeTxs.has(key)) return;
+    writtenNativeTxs.add(key);
+
+    const { error } = await supabase.rpc("upsert_transaction", {
+      p_tx_hash: hash,
+      p_chain_id: chainId,
+      p_user_address: dbAddressMap.get(userAddress) ?? userAddress,
+      p_from_address: from,
+      p_to_address: to,
+      p_value_raw: value,
+      p_contract_address: null,
+      p_symbol: nativeSymbol,
+      p_token_name: nativeName,
+      p_decimals: nativeDecimals,
+      p_direction: direction,
+      p_block_number: payload.block.number,
+      p_block_timestamp: payload.block.timestamp,
+      p_status: "SUCCESS",
+    });
+    if (error) {
+      console.error(
+        `[webhook] upsert_transaction (native ${direction}) failed for ${userAddress}:`,
+        error.message
+      );
+    }
+  }
+
+  // ── Normal transactions (txs) — catches direct EOA→EOA ETH sends ──────────
+  for (const tx of payload.txs) {
+    // receiptStatus can be "1" or "0x1" depending on the Moralis stream version
+    if (parseInt(tx.receiptStatus, 16) !== 1) continue;
+    const value = tx.value ?? "0";
+    if (value === "0" || value === "") continue;
+
+    const from = tx.fromAddress.toLowerCase();
+    const to = tx.toAddress?.toLowerCase() ?? "";
+    if (!to) continue;
 
     if (monitoredAddresses.has(from)) {
-      const { error } = await supabase.rpc("upsert_transaction", {
-        p_tx_hash: tx.transactionHash,
-        p_chain_id: chainId,
-        p_user_address: from,
-        p_from_address: from,
-        p_to_address: to,
-        p_value_raw: tx.value,
-        p_contract_address: null,
-        p_symbol: nativeSymbol,
-        p_token_name: nativeName,
-        p_decimals: nativeDecimals,
-        p_direction: "out" as const,
-        p_block_number: payload.block.number,
-        p_block_timestamp: payload.block.timestamp,
-        p_status: "SUCCESS",
-      });
-      if (error) {
-        console.error(
-          `[webhook] upsert_transaction (native out) failed for ${from}:`,
-          error.message
-        );
+      await upsertNativeTx(tx.hash, from, to, value, "out", from);
+      if (!exactBalanceUpdated.has(from)) {
+        const gasCost = (
+          BigInt(tx.receiptGasUsed ?? "0") * BigInt(tx.gasPrice ?? "0")
+        ).toString();
+        const total = (BigInt(value) + BigInt(gasCost)).toString();
+        await adjustNativeBalance(from, `-${total}`);
       }
     }
 
     if (monitoredAddresses.has(to)) {
-      const { error } = await supabase.rpc("upsert_transaction", {
-        p_tx_hash: tx.transactionHash,
-        p_chain_id: chainId,
-        p_user_address: to,
-        p_from_address: from,
-        p_to_address: to,
-        p_value_raw: tx.value,
-        p_contract_address: null,
-        p_symbol: nativeSymbol,
-        p_token_name: nativeName,
-        p_decimals: nativeDecimals,
-        p_direction: "in" as const,
-        p_block_number: payload.block.number,
-        p_block_timestamp: payload.block.timestamp,
-        p_status: "SUCCESS",
-      });
-      if (error) {
-        console.error(
-          `[webhook] upsert_transaction (native in) failed for ${to}:`,
-          error.message
-        );
+      await upsertNativeTx(tx.hash, from, to, value, "in", to);
+      if (!exactBalanceUpdated.has(to)) {
+        await adjustNativeBalance(to, value);
+      }
+    }
+  }
+
+  // ── Internal transactions (txsInternal) ───────────────────────────────────
+  for (const tx of payload.txsInternal) {
+    const from = tx.from.toLowerCase();
+    const to = tx.to.toLowerCase();
+    const value = tx.value ?? "0";
+    if (value === "0" || value === "") continue;
+
+    if (monitoredAddresses.has(from)) {
+      await upsertNativeTx(tx.transactionHash, from, to, value, "out", from);
+      if (!exactBalanceUpdated.has(from)) {
+        await adjustNativeBalance(from, `-${value}`);
+      }
+    }
+
+    if (monitoredAddresses.has(to)) {
+      await upsertNativeTx(tx.transactionHash, from, to, value, "in", to);
+      if (!exactBalanceUpdated.has(to)) {
+        await adjustNativeBalance(to, value);
       }
     }
   }
@@ -184,12 +291,14 @@ export async function updateOrCreateTokenUserBalances(
 
     const from = transfer.from.toLowerCase();
     const to = transfer.to.toLowerCase();
+    const dbFrom = dbAddressMap.get(from) ?? from;
+    const dbTo = dbAddressMap.get(to) ?? to;
     const contract = transfer.contract.toLowerCase();
     const decimals = parseInt(transfer.tokenDecimals, 10);
 
     if (monitoredAddresses.has(from)) {
       const { error: balErr } = await supabase.rpc("adjust_balance", {
-        p_user_address: from,
+        p_user_address: dbFrom,
         p_chain_id: chainId,
         p_contract_address: contract,
         p_symbol: transfer.tokenSymbol,
@@ -199,14 +308,14 @@ export async function updateOrCreateTokenUserBalances(
       });
       if (balErr) {
         console.error(
-          `[webhook] adjust_balance (erc20 out) failed for ${from}:`,
+          `[webhook] adjust_balance (erc20 out) failed for ${dbFrom}:`,
           balErr.message
         );
       }
       const { error: txErr } = await supabase.rpc("upsert_transaction", {
         p_tx_hash: transfer.transactionHash,
         p_chain_id: chainId,
-        p_user_address: from,
+        p_user_address: dbFrom,
         p_from_address: from,
         p_to_address: to,
         p_value_raw: transfer.value,
@@ -221,7 +330,7 @@ export async function updateOrCreateTokenUserBalances(
       });
       if (txErr) {
         console.error(
-          `[webhook] upsert_transaction (erc20 out) failed for ${from}:`,
+          `[webhook] upsert_transaction (erc20 out) failed for ${dbFrom}:`,
           txErr.message
         );
       }
@@ -229,7 +338,7 @@ export async function updateOrCreateTokenUserBalances(
 
     if (monitoredAddresses.has(to)) {
       const { error: balErr } = await supabase.rpc("adjust_balance", {
-        p_user_address: to,
+        p_user_address: dbTo,
         p_chain_id: chainId,
         p_contract_address: contract,
         p_symbol: transfer.tokenSymbol,
@@ -239,7 +348,7 @@ export async function updateOrCreateTokenUserBalances(
       });
       if (balErr) {
         console.error(
-          `[webhook] adjust_balance (erc20 in) failed for ${to}:`,
+          `[webhook] adjust_balance (erc20 in) failed for ${dbTo}:`,
           balErr.message
         );
       }
@@ -247,7 +356,7 @@ export async function updateOrCreateTokenUserBalances(
       const { error: txErr } = await supabase.rpc("upsert_transaction", {
         p_tx_hash: transfer.transactionHash,
         p_chain_id: chainId,
-        p_user_address: to,
+        p_user_address: dbTo,
         p_from_address: from,
         p_to_address: to,
         p_value_raw: transfer.value,
@@ -262,7 +371,7 @@ export async function updateOrCreateTokenUserBalances(
       });
       if (txErr) {
         console.error(
-          `[webhook] upsert_transaction (erc20 in) failed for ${to}:`,
+          `[webhook] upsert_transaction (erc20 in) failed for ${dbTo}:`,
           txErr.message
         );
       }

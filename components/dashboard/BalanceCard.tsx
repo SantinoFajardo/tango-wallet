@@ -108,6 +108,7 @@ export function BalanceCard({ totalUSD, isLoading, address }: BalanceCardProps) 
           {[
             { label: "⬆ Send", onClick: () => router.push("/send") },
             { label: "⬇ Receive", onClick: () => router.push("/receive") },
+            { label: "⇄ Swap", onClick: () => router.push("/swap") },
           ].map(({ label, onClick }) => (
             <button
               key={label}

@@ -34,11 +34,83 @@ export async function getChains(): Promise<ChainRow[]> {
   return data ?? [];
 }
 
+export interface SwapToken extends TokenRow {
+  raw_balance: string;
+  display_balance: number;
+  price_usd: number;
+}
+
+export async function getTokensForSwap(
+  userAddress: string,
+  chainId: number
+): Promise<SwapToken[]> {
+  const supabase = createServerClient();
+
+  const tokensQuery = supabase
+    .from("tokens")
+    .select(
+      "id, name, symbol, chain_id, contract_address, image_url, decimals, is_native"
+    )
+    .eq("chain_id", chainId)
+    .order("is_native", { ascending: false })
+    .order("name");
+
+  const balancesQuery = userAddress
+    ? supabase
+        .from("balances")
+        .select("contract_address, raw_balance")
+        .eq("user_address", userAddress)
+        .eq("chain_id", chainId)
+    : Promise.resolve({ data: [], error: null });
+
+  const [tokensResult, balancesResult] = await Promise.all([
+    tokensQuery,
+    balancesQuery,
+  ]);
+
+  if (tokensResult.error) throw new Error(tokensResult.error.message);
+
+  const tokens = tokensResult.data ?? [];
+  const balances = balancesResult.data ?? [];
+  console.log({ balances });
+
+  const balanceMap = new Map<string | null, string>();
+  for (const b of balances) {
+    balanceMap.set(b.contract_address, b.raw_balance);
+  }
+
+  const nativeToken = tokens.find((t) => t.is_native);
+  let nativePrice = 0;
+  if (nativeToken && !STABLECOINS.has(nativeToken.symbol.toUpperCase())) {
+    nativePrice = await getNativeTokenPriceUSD(nativeToken.symbol).catch(
+      () => 0
+    );
+  }
+
+  console.log({ balanceMap });
+  return tokens.map((t) => {
+    console.log("Token: ", t.name);
+    console.log("TAddress: ", t.contract_address);
+    const rawBal = balanceMap.get(t.contract_address) ?? "0";
+    const displayBalance = Number(rawBal) / Math.pow(10, t.decimals);
+    const isStable = STABLECOINS.has(t.symbol.toUpperCase());
+    const priceUsd = t.is_native ? nativePrice : isStable ? 1.0 : 0;
+    return {
+      ...t,
+      raw_balance: rawBal,
+      display_balance: displayBalance,
+      price_usd: priceUsd,
+    };
+  });
+}
+
 export async function getTokensByChain(chainId: number): Promise<TokenRow[]> {
   const supabase = createServerClient();
   const { data, error } = await supabase
     .from("tokens")
-    .select("id, name, symbol, chain_id, contract_address, image_url, decimals, is_native")
+    .select(
+      "id, name, symbol, chain_id, contract_address, image_url, decimals, is_native"
+    )
     .eq("chain_id", chainId)
     .order("is_native", { ascending: false })
     .order("name");
@@ -54,7 +126,7 @@ export interface TokenWithBalance extends TokenRow {
 
 export async function getTokensWithBalances(
   userAddress: string,
-  chainId: number,
+  chainId: number
 ): Promise<TokenWithBalance[]> {
   const supabase = createServerClient();
 
