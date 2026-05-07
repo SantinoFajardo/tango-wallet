@@ -8,6 +8,7 @@ interface TokenRow {
   key: string;
   symbol: string;
   name: string;
+  imageUrl: string;
   displayValue: string;
   priceUSD: number;
   valueUSD: number;
@@ -57,6 +58,7 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
     const aggregated = new Map<string, {
       symbol: string;
       name: string;
+      imageUrl: string;
       totalAmount: number;
       isNative: boolean;
     }>();
@@ -70,7 +72,13 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
       if (existing) {
         existing.totalAmount += amount;
       } else {
-        aggregated.set(key, { symbol: b.symbol, name: b.token_name, totalAmount: amount, isNative });
+        aggregated.set(key, {
+          symbol: b.symbol,
+          name: b.token_name,
+          imageUrl: (b as typeof b & { image_url?: string }).image_url ?? "",
+          totalAmount: amount,
+          isNative,
+        });
       }
     }
 
@@ -91,6 +99,7 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
         key,
         symbol: v.symbol,
         name: v.name,
+        imageUrl: v.imageUrl,
         displayValue: formatAmount(v.totalAmount),
         priceUSD,
         valueUSD: v.totalAmount * priceUSD,
@@ -188,9 +197,17 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-layer flex items-center justify-center text-xs font-bold text-ink-dim">
-                        {row.symbol.slice(0, 2)}
-                      </div>
+                      {row.imageUrl ? (
+                        <img
+                          src={row.imageUrl}
+                          alt={row.symbol}
+                          className="w-8 h-8 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-layer flex items-center justify-center text-xs font-bold text-ink-dim">
+                          {row.symbol.slice(0, 2)}
+                        </div>
+                      )}
                       <div>
                         <p className="font-medium text-ink">{row.symbol}</p>
                         <p className="text-xs text-ink-faint">{row.name}</p>
