@@ -32,7 +32,11 @@ function getExplorerTxUrl(chain: Chain, hash: string): string | null {
 }
 
 function resolveChain(chainId: number): Chain {
-  return SUPPORTED_CHAINS.find((c) => c.id === chainId) ?? ({ id: chainId, name: `Chain ${chainId}` } as Chain);
+  console.log(chainId);
+  return (
+    SUPPORTED_CHAINS.find((c) => c.id === chainId) ??
+    ({ id: chainId, name: `Chain ${chainId}` } as Chain)
+  );
 }
 
 function formatDateLabel(dateKey: string): string {
@@ -82,7 +86,11 @@ function ChainBadge({ name }: { name: string }) {
   return (
     <span
       className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold"
-      style={{ background: "#62728822", color: "var(--ink-faint)", fontSize: 11 }}
+      style={{
+        background: "#62728822",
+        color: "var(--ink-faint)",
+        fontSize: 11,
+      }}
     >
       {name}
     </span>
@@ -214,20 +222,26 @@ export function TxTable({ address, chain }: TxTableProps) {
                       >
                         {tx.symbol || "Unknown"}
                       </span>
-                      <ChainBadge name={txChain.name ?? `Chain ${tx.chain_id}`} />
+                      <ChainBadge
+                        name={txChain.name ?? `Chain ${tx.chain_id}`}
+                      />
                       {isSponsored && <SponsoredPill />}
                     </div>
                     <div className="flex flex-col gap-0.5 mt-0.5">
                       {tx.from_address && (
                         <p className="text-xs text-ink-faint truncate">
                           <span className="opacity-60">From</span>{" "}
-                          <span className="font-mono">{shortAddr(tx.from_address)}</span>
+                          <span className="font-mono">
+                            {shortAddr(tx.from_address)}
+                          </span>
                         </p>
                       )}
                       {tx.to_address && (
                         <p className="text-xs text-ink-faint truncate">
                           <span className="opacity-60">To</span>{" "}
-                          <span className="font-mono">{shortAddr(tx.to_address)}</span>
+                          <span className="font-mono">
+                            {shortAddr(tx.to_address)}
+                          </span>
                         </p>
                       )}
                     </div>
