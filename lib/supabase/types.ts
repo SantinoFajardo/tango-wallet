@@ -1,4 +1,10 @@
-export type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json }
+  | Json[];
 
 export type Database = {
   public: {
@@ -65,6 +71,7 @@ export type Database = {
           image_url: string;
           decimals: number;
           is_native: boolean;
+          is_stable: boolean;
           created_at: string;
         };
         Insert: {
@@ -92,7 +99,7 @@ export type Database = {
             columns: ["chain_id"];
             referencedRelation: "chains";
             referencedColumns: ["chain_id"];
-          },
+          }
         ];
       };
       balances: {
@@ -131,7 +138,7 @@ export type Database = {
             columns: ["user_address"];
             referencedRelation: "users";
             referencedColumns: ["address"];
-          },
+          }
         ];
       };
       transactions: {
@@ -186,7 +193,7 @@ export type Database = {
             columns: ["user_address"];
             referencedRelation: "users";
             referencedColumns: ["address"];
-          },
+          }
         ];
       };
     };

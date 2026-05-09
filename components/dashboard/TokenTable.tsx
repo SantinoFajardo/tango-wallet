@@ -80,6 +80,7 @@ type BalanceWithMeta = {
   raw_balance: string;
   updated_at: string;
   image_url?: string;
+  is_stable?: boolean;
   chain_name?: string;
   chain_image_url?: string;
 };
@@ -112,6 +113,7 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
           imageUrl: string;
           totalAmount: number;
           isNative: boolean;
+          isStable: boolean;
           chainMap: Map<number, ChainBreakdown>;
         }
       >();
@@ -149,6 +151,7 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
             imageUrl: b.image_url ?? "",
             totalAmount: amount,
             isNative,
+            isStable: b.is_stable ?? false,
             chainMap,
           });
         }
@@ -159,10 +162,10 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
         if (v.totalAmount <= 0) aggregated.delete(key);
       }
 
-      // Fetch USD prices for native tokens (parallel).
+      // Fetch USD prices for non-stable native tokens (parallel).
       const priceEntries = await Promise.all(
         [...aggregated.entries()]
-          .filter(([, v]) => v.isNative)
+          .filter(([, v]) => v.isNative && !v.isStable)
           .map(async ([key, v]) => {
             const price = await getNativeTokenPriceUSD(v.symbol).catch(() => 0);
             return [key, price] as const;
@@ -171,7 +174,7 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
       const prices = new Map(priceEntries);
 
       const built: TokenRow[] = [...aggregated.entries()].map(([key, v]) => {
-        const priceUSD = prices.get(key) ?? 0;
+        const priceUSD = v.isStable ? 1.0 : (prices.get(key) ?? 0);
         return {
           key,
           symbol: v.symbol,

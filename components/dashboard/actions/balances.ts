@@ -565,7 +565,7 @@ export async function getAllTokenUserBalances(userAddress: string) {
   const [{ data: tokens }, { data: chains }] = await Promise.all([
     supabase
       .from("tokens")
-      .select("chain_id, contract_address, image_url, is_native")
+      .select("chain_id, contract_address, image_url, is_native, is_stable")
       .in("chain_id", chainIds),
     supabase
       .from("chains")
@@ -573,10 +573,11 @@ export async function getAllTokenUserBalances(userAddress: string) {
       .in("chain_id", chainIds),
   ]);
 
-  const tokenMap = new Map<string, string>();
-  for (const t of tokens ?? []) {
+  type TokenMeta = { image_url: string; is_stable: boolean };
+  const tokenMap = new Map<string, TokenMeta>();
+  for (const t of (tokens ?? []) as (typeof tokens[number] & { is_stable?: boolean })[]) {
     const key = t.is_native ? `${t.chain_id}:null` : `${t.chain_id}:${t.contract_address}`;
-    tokenMap.set(key, t.image_url ?? "");
+    tokenMap.set(key, { image_url: t.image_url ?? "", is_stable: t.is_stable ?? false });
   }
 
   const chainMap = new Map<number, { name: string; image_url: string }>();
@@ -586,10 +587,12 @@ export async function getAllTokenUserBalances(userAddress: string) {
 
   return data.map((b) => {
     const key = b.contract_address === null ? `${b.chain_id}:null` : `${b.chain_id}:${b.contract_address}`;
+    const meta = tokenMap.get(key);
     const chain = chainMap.get(b.chain_id);
     return {
       ...b,
-      image_url: tokenMap.get(key) ?? "",
+      image_url: meta?.image_url ?? "",
+      is_stable: meta?.is_stable ?? false,
       chain_name: chain?.name ?? `Chain ${b.chain_id}`,
       chain_image_url: chain?.image_url ?? "",
     };

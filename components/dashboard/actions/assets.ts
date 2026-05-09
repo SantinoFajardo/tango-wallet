@@ -3,8 +3,6 @@
 import { createServerClient } from "@/lib/supabase/server";
 import { getNativeTokenPriceUSD } from "@/lib/prices";
 
-const STABLECOINS = new Set(["USDC", "USDT", "DAI", "BUSD", "FRAX", "USDD"]);
-
 export interface ChainRow {
   id: string;
   name: string;
@@ -22,6 +20,7 @@ export interface TokenRow {
   image_url: string;
   decimals: number;
   is_native: boolean;
+  is_stable: boolean;
 }
 
 export async function getChains(): Promise<ChainRow[]> {
@@ -49,7 +48,7 @@ export async function getTokensForSwap(
   const tokensQuery = supabase
     .from("tokens")
     .select(
-      "id, name, symbol, chain_id, contract_address, image_url, decimals, is_native"
+      "id, name, symbol, chain_id, contract_address, image_url, decimals, is_native, is_stable"
     )
     .eq("chain_id", chainId)
     .order("is_native", { ascending: false })
@@ -72,7 +71,6 @@ export async function getTokensForSwap(
 
   const tokens = tokensResult.data ?? [];
   const balances = balancesResult.data ?? [];
-  console.log({ balances });
 
   const balanceMap = new Map<string | null, string>();
   for (const b of balances) {
@@ -81,20 +79,16 @@ export async function getTokensForSwap(
 
   const nativeToken = tokens.find((t) => t.is_native);
   let nativePrice = 0;
-  if (nativeToken && !STABLECOINS.has(nativeToken.symbol.toUpperCase())) {
+  if (nativeToken && !nativeToken.is_stable) {
     nativePrice = await getNativeTokenPriceUSD(nativeToken.symbol).catch(
       () => 0
     );
   }
 
-  console.log({ balanceMap });
   return tokens.map((t) => {
-    console.log("Token: ", t.name);
-    console.log("TAddress: ", t.contract_address);
     const rawBal = balanceMap.get(t.contract_address) ?? "0";
     const displayBalance = Number(rawBal) / Math.pow(10, t.decimals);
-    const isStable = STABLECOINS.has(t.symbol.toUpperCase());
-    const priceUsd = t.is_native ? nativePrice : isStable ? 1.0 : 0;
+    const priceUsd = t.is_native ? nativePrice : t.is_stable ? 1.0 : 0;
     return {
       ...t,
       raw_balance: rawBal,
@@ -109,7 +103,7 @@ export async function getTokensByChain(chainId: number): Promise<TokenRow[]> {
   const { data, error } = await supabase
     .from("tokens")
     .select(
-      "id, name, symbol, chain_id, contract_address, image_url, decimals, is_native"
+      "id, name, symbol, chain_id, contract_address, image_url, decimals, is_native, is_stable"
     )
     .eq("chain_id", chainId)
     .order("is_native", { ascending: false })
@@ -130,17 +124,35 @@ export async function getTokensWithBalances(
 ): Promise<TokenWithBalance[]> {
   const supabase = createServerClient();
 
-  const { data: balances } = await supabase
-    .from("balances")
-    .select("id, contract_address, symbol, token_name, decimals, raw_balance")
-    .eq("user_address", userAddress)
-    .eq("chain_id", chainId);
+  const [{ data: balances }, { data: tokens }] = await Promise.all([
+    supabase
+      .from("balances")
+      .select("id, contract_address, symbol, token_name, decimals, raw_balance")
+      .eq("user_address", userAddress)
+      .eq("chain_id", chainId),
+    supabase
+      .from("tokens")
+      .select("contract_address, is_native, is_stable")
+      .eq("chain_id", chainId),
+  ]);
 
   if (!balances || balances.length === 0) return [];
 
+  const tokenMeta = new Map<
+    string | null,
+    { is_native: boolean; is_stable: boolean }
+  >();
+  for (const t of tokens ?? []) {
+    tokenMeta.set(t.contract_address, {
+      is_native: t.is_native,
+      is_stable: t.is_stable,
+    });
+  }
+
   const nativeBalance = balances.find((b) => b.contract_address === null);
+  const nativeMeta = tokenMeta.get(null);
   let nativePrice = 0;
-  if (nativeBalance && !STABLECOINS.has(nativeBalance.symbol.toUpperCase())) {
+  if (nativeBalance && !nativeMeta?.is_stable) {
     nativePrice = await getNativeTokenPriceUSD(nativeBalance.symbol);
   }
 
@@ -149,8 +161,9 @@ export async function getTokensWithBalances(
     const displayBalance = Number(b.raw_balance) / Math.pow(10, b.decimals);
     if (displayBalance <= 0) continue;
 
+    const meta = tokenMeta.get(b.contract_address);
     const isNative = b.contract_address === null;
-    const isStable = STABLECOINS.has(b.symbol.toUpperCase());
+    const isStable = meta?.is_stable ?? false;
     const priceUsd = isNative ? nativePrice : isStable ? 1.0 : 0;
 
     result.push({
@@ -162,6 +175,7 @@ export async function getTokensWithBalances(
       image_url: "",
       decimals: b.decimals,
       is_native: isNative,
+      is_stable: isStable,
       display_balance: displayBalance,
       price_usd: priceUsd,
       usd_value: displayBalance * priceUsd,
