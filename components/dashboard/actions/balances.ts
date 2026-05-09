@@ -562,10 +562,16 @@ export async function getAllTokenUserBalances(userAddress: string) {
   if (data.length === 0) return [];
 
   const chainIds = [...new Set(data.map((b) => b.chain_id))];
-  const { data: tokens } = await supabase
-    .from("tokens")
-    .select("chain_id, contract_address, image_url, is_native")
-    .in("chain_id", chainIds);
+  const [{ data: tokens }, { data: chains }] = await Promise.all([
+    supabase
+      .from("tokens")
+      .select("chain_id, contract_address, image_url, is_native")
+      .in("chain_id", chainIds),
+    supabase
+      .from("chains")
+      .select("chain_id, name, image_url")
+      .in("chain_id", chainIds),
+  ]);
 
   const tokenMap = new Map<string, string>();
   for (const t of tokens ?? []) {
@@ -573,8 +579,19 @@ export async function getAllTokenUserBalances(userAddress: string) {
     tokenMap.set(key, t.image_url ?? "");
   }
 
+  const chainMap = new Map<number, { name: string; image_url: string }>();
+  for (const c of chains ?? []) {
+    chainMap.set(c.chain_id, { name: c.name, image_url: c.image_url ?? "" });
+  }
+
   return data.map((b) => {
     const key = b.contract_address === null ? `${b.chain_id}:null` : `${b.chain_id}:${b.contract_address}`;
-    return { ...b, image_url: tokenMap.get(key) ?? "" };
+    const chain = chainMap.get(b.chain_id);
+    return {
+      ...b,
+      image_url: tokenMap.get(key) ?? "",
+      chain_name: chain?.name ?? `Chain ${b.chain_id}`,
+      chain_image_url: chain?.image_url ?? "",
+    };
   });
 }

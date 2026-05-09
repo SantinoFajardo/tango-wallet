@@ -1,11 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { getNativeTokenPriceUSD } from "@/lib/prices";
 import {
   getAllTokenUserBalances,
   refreshAllBalances,
 } from "@/components/dashboard/actions/balances";
+
+interface ChainBreakdown {
+  chainId: number;
+  chainName: string;
+  chainImageUrl: string;
+  amount: number;
+}
 
 interface TokenRow {
   key: string;
@@ -15,6 +22,7 @@ interface TokenRow {
   displayValue: string;
   priceUSD: number;
   valueUSD: number;
+  chains: ChainBreakdown[];
 }
 
 interface TokenTableProps {
@@ -47,18 +55,55 @@ function Skeleton() {
   );
 }
 
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-180" : ""}`}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path d="M4 6l4 4 4-4" />
+    </svg>
+  );
+}
+
+type BalanceWithMeta = {
+  id: string;
+  user_address: string;
+  chain_id: number;
+  contract_address: string | null;
+  symbol: string;
+  token_name: string;
+  decimals: number;
+  raw_balance: string;
+  updated_at: string;
+  image_url?: string;
+  chain_name?: string;
+  chain_image_url?: string;
+};
+
 export function TokenTable({ address, onTotalChange }: TokenTableProps) {
   const [rows, setRows] = useState<TokenRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+
+  function toggleExpand(key: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
 
   const buildRows = useCallback(
     async (
-      balances: Awaited<ReturnType<typeof getAllTokenUserBalances>>
+      balances: BalanceWithMeta[] | null
     ): Promise<TokenRow[]> => {
       if (!balances || balances.length === 0) return [];
 
-      // Aggregate by symbol across all chains.
       const aggregated = new Map<
         string,
         {
@@ -67,6 +112,7 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
           imageUrl: string;
           totalAmount: number;
           isNative: boolean;
+          chainMap: Map<number, ChainBreakdown>;
         }
       >();
 
@@ -78,15 +124,39 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
         const existing = aggregated.get(key);
         if (existing) {
           existing.totalAmount += amount;
+          const chainEntry = existing.chainMap.get(b.chain_id);
+          if (chainEntry) {
+            chainEntry.amount += amount;
+          } else {
+            existing.chainMap.set(b.chain_id, {
+              chainId: b.chain_id,
+              chainName: b.chain_name ?? `Chain ${b.chain_id}`,
+              chainImageUrl: b.chain_image_url ?? "",
+              amount,
+            });
+          }
         } else {
+          const chainMap = new Map<number, ChainBreakdown>();
+          chainMap.set(b.chain_id, {
+            chainId: b.chain_id,
+            chainName: b.chain_name ?? `Chain ${b.chain_id}`,
+            chainImageUrl: b.chain_image_url ?? "",
+            amount,
+          });
           aggregated.set(key, {
             symbol: b.symbol,
             name: b.token_name,
-            imageUrl: (b as typeof b & { image_url?: string }).image_url ?? "",
+            imageUrl: b.image_url ?? "",
             totalAmount: amount,
             isNative,
+            chainMap,
           });
         }
+      }
+
+      // Drop tokens with no balance before further processing.
+      for (const [key, v] of aggregated) {
+        if (v.totalAmount <= 0) aggregated.delete(key);
       }
 
       // Fetch USD prices for native tokens (parallel).
@@ -110,10 +180,10 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
           displayValue: formatAmount(v.totalAmount),
           priceUSD,
           valueUSD: v.totalAmount * priceUSD,
+          chains: [...v.chainMap.values()].filter((c) => c.amount > 0),
         };
       });
 
-      // Native tokens first, then ERC20s alphabetically.
       built.sort((a, b) => {
         const aNative = aggregated.get(a.key)?.isNative ?? false;
         const bNative = aggregated.get(b.key)?.isNative ?? false;
@@ -136,12 +206,11 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
         let balances = await getAllTokenUserBalances(address);
         const hasData = balances && balances.length > 0;
 
-        // On refresh or empty DB: pull fresh data from all chains.
         if (isRefresh || !hasData) {
-          balances = await refreshAllBalances(address);
+          balances = (await refreshAllBalances(address)) as typeof balances;
         }
 
-        const built = await buildRows(balances);
+        const built = await buildRows(balances as BalanceWithMeta[]);
         setRows(built);
         onTotalChange(built.reduce((s, r) => s + r.valueUSD, 0));
       } catch (err) {
@@ -206,41 +275,84 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
               </tr>
             ) : (
               rows.map((row) => (
-                <tr
-                  key={row.key}
-                  className="border-b border-line hover:bg-stripe transition-colors"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-layer flex items-center justify-center text-xs font-bold text-ink-dim">
-                        {row.symbol.slice(0, 2)}
+                <Fragment key={row.key}>
+                  <tr
+                    className="border-b border-line hover:bg-stripe transition-colors cursor-pointer"
+                    onClick={() => row.chains.length > 1 && toggleExpand(row.key)}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {row.imageUrl ? (
+                          <img
+                            src={row.imageUrl}
+                            alt={row.symbol}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-layer flex items-center justify-center text-xs font-bold text-ink-dim">
+                            {row.symbol.slice(0, 2)}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-ink">{row.symbol}</p>
+                          <p className="text-xs text-ink-faint">{row.name}</p>
+                        </div>
+                        {row.chains.length > 1 && (
+                          <span className="ml-1 text-ink-faint">
+                            <ChevronIcon open={expanded.has(row.key)} />
+                          </span>
+                        )}
                       </div>
-                      <div>
-                        <p className="font-medium text-ink">{row.symbol}</p>
-                        <p className="text-xs text-ink-faint">{row.name}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right font-mono text-ink-dim">
-                    {row.displayValue}
-                  </td>
-                  <td className="px-6 py-4 text-right text-ink-dim">
-                    {row.priceUSD > 0
-                      ? `$${row.priceUSD.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`
-                      : "—"}
-                  </td>
-                  <td className="px-6 py-4 text-right font-medium text-ink">
-                    {row.valueUSD > 0
-                      ? `$${row.valueUSD.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}`
-                      : "—"}
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono text-ink-dim">
+                      {row.displayValue}
+                    </td>
+                    <td className="px-6 py-4 text-right text-ink-dim">
+                      {row.priceUSD > 0
+                        ? `$${row.priceUSD.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`
+                        : "—"}
+                    </td>
+                    <td className="px-6 py-4 text-right font-medium text-ink">
+                      {row.valueUSD > 0
+                        ? `$${row.valueUSD.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}`
+                        : "—"}
+                    </td>
+                  </tr>
+
+                  {expanded.has(row.key) &&
+                    row.chains.map((c) => (
+                      <tr
+                        key={`${row.key}:${c.chainId}`}
+                        className="border-b border-line bg-stripe"
+                      >
+                        <td className="pl-16 pr-6 py-2.5">
+                          <div className="flex items-center gap-2">
+                            {c.chainImageUrl ? (
+                              <img
+                                src={c.chainImageUrl}
+                                alt={c.chainName}
+                                className="w-4 h-4 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-4 h-4 rounded-full bg-layer" />
+                            )}
+                            <span className="text-xs text-ink-dim">{c.chainName}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-2.5 text-right font-mono text-xs text-ink-dim">
+                          {formatAmount(c.amount)}
+                        </td>
+                        <td className="px-6 py-2.5" />
+                        <td className="px-6 py-2.5" />
+                      </tr>
+                    ))}
+                </Fragment>
               ))
             )}
           </tbody>
