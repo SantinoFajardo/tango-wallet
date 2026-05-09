@@ -281,7 +281,7 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
                 <Fragment key={row.key}>
                   <tr
                     className="border-b border-line hover:bg-stripe transition-colors cursor-pointer"
-                    onClick={() => row.chains.length > 1 && toggleExpand(row.key)}
+                    onClick={() => toggleExpand(row.key)}
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
@@ -300,11 +300,9 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
                           <p className="font-medium text-ink">{row.symbol}</p>
                           <p className="text-xs text-ink-faint">{row.name}</p>
                         </div>
-                        {row.chains.length > 1 && (
-                          <span className="ml-1 text-ink-faint">
-                            <ChevronIcon open={expanded.has(row.key)} />
-                          </span>
-                        )}
+                        <span className="ml-1 text-ink-faint">
+                          <ChevronIcon open={expanded.has(row.key)} />
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right font-mono text-ink-dim">
@@ -328,33 +326,45 @@ export function TokenTable({ address, onTotalChange }: TokenTableProps) {
                     </td>
                   </tr>
 
-                  {expanded.has(row.key) &&
-                    row.chains.map((c) => (
-                      <tr
-                        key={`${row.key}:${c.chainId}`}
-                        className="border-b border-line bg-stripe"
+                  <tr className="border-b border-line">
+                    <td colSpan={4} className="p-0">
+                      <div
+                        style={{
+                          maxHeight: expanded.has(row.key)
+                            ? `${row.chains.length * 44}px`
+                            : "0px",
+                          opacity: expanded.has(row.key) ? 1 : 0,
+                          overflow: "hidden",
+                          transition: "max-height 0.25s ease, opacity 0.2s ease",
+                        }}
                       >
-                        <td className="pl-16 pr-6 py-2.5">
-                          <div className="flex items-center gap-2">
-                            {c.chainImageUrl ? (
-                              <img
-                                src={c.chainImageUrl}
-                                alt={c.chainName}
-                                className="w-4 h-4 rounded-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-4 h-4 rounded-full bg-layer" />
-                            )}
-                            <span className="text-xs text-ink-dim">{c.chainName}</span>
+                        {row.chains.map((c) => (
+                          <div
+                            key={`${row.key}:${c.chainId}`}
+                            className="flex items-center bg-stripe px-6 py-2.5"
+                          >
+                            <div className="flex items-center gap-2 flex-1 pl-10">
+                              {c.chainImageUrl ? (
+                                <img
+                                  src={c.chainImageUrl}
+                                  alt={c.chainName}
+                                  className="w-4 h-4 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-4 h-4 rounded-full bg-layer" />
+                              )}
+                              <span className="text-xs text-ink-dim">{c.chainName}</span>
+                            </div>
+                            <span className="font-mono text-xs text-ink-dim w-1/4 text-right">
+                              {formatAmount(c.amount)}
+                            </span>
+                            <span className="w-1/4" />
+                            <span className="w-1/4" />
                           </div>
-                        </td>
-                        <td className="px-6 py-2.5 text-right font-mono text-xs text-ink-dim">
-                          {formatAmount(c.amount)}
-                        </td>
-                        <td className="px-6 py-2.5" />
-                        <td className="px-6 py-2.5" />
-                      </tr>
-                    ))}
+                        ))}
+                      </div>
+                    </td>
+                  </tr>
                 </Fragment>
               ))
             )}
