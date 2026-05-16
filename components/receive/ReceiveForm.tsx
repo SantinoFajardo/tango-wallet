@@ -179,7 +179,12 @@ function ChainStep({
                 className="w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold shrink-0"
                 style={{ background: color + "20", color }}
               >
-                {chain.name.slice(0, 1)}
+                <Image
+                  src={chain.image_url}
+                  alt={chain.name}
+                  width={25}
+                  height={25}
+                />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-base font-bold text-ink">{chain.name}</div>
