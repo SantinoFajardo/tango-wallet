@@ -336,7 +336,13 @@ function AddressStep({
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
           style={{ background: color + "18", color }}
         >
-          {chain.name.slice(0, 1)} {chain.name}
+          <Image
+            src={chain.image_url}
+            alt={chain.name}
+            width={15}
+            height={15}
+          />{" "}
+          {chain.name}
         </span>
         <span
           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold"
