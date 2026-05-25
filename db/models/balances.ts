@@ -187,6 +187,30 @@ class Balances {
     return data;
   }
 
+  // Adds amountWei to the existing balance (BigInt-safe). Creates row if absent.
+  public async increment(
+    userId: string,
+    tokenId: string,
+    amountWei: string,
+    decimals: number
+  ): Promise<void> {
+    const existing = await this.getUserTokenBalance(userId, tokenId);
+    const current = BigInt(existing?.balance_in_wei ?? "0");
+    const updated = (current + BigInt(amountWei)).toString();
+
+    await this.upsert({ user_id: userId, token_id: tokenId, balance_in_wei: updated, decimals, price_id: null });
+  }
+
+  // Sets the balance to an exact wei value. Creates row if absent.
+  public async set(
+    userId: string,
+    tokenId: string,
+    balanceWei: string,
+    decimals: number
+  ): Promise<void> {
+    await this.upsert({ user_id: userId, token_id: tokenId, balance_in_wei: balanceWei, decimals, price_id: null });
+  }
+
   public async delete(id: string): Promise<void> {
     const { error } = await supabase.from(this.table).delete().eq("id", id);
     if (error) throw error;

@@ -51,6 +51,40 @@ class Tokens {
     return data;
   }
 
+  public async getNativeByChain(chainId: string): Promise<Token | null> {
+    const { data, error } = await supabase
+      .from(this.table)
+      .select("*")
+      .eq("chain_id", chainId)
+      .eq("token_type", "NATIVE")
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
+  // Returns a Map keyed by lowercase contract_address for O(1) lookups
+  public async getByContracts(
+    chainId: string,
+    contractAddresses: string[]
+  ): Promise<Map<string, Token>> {
+    const { data, error } = await supabase
+      .from(this.table)
+      .select("*")
+      .eq("chain_id", chainId)
+      .in("contract_address", contractAddresses);
+
+    if (error) throw error;
+
+    const map = new Map<string, Token>();
+    for (const token of data ?? []) {
+      if (token.contract_address) {
+        map.set(token.contract_address.toLowerCase(), token);
+      }
+    }
+    return map;
+  }
+
   public async getStablecoins(): Promise<Token[]> {
     const { data, error } = await supabase
       .from(this.table)

@@ -36,6 +36,17 @@ class Chains {
     return data;
   }
 
+  public async getByChainNumber(chainNumber: number): Promise<Chain | null> {
+    const { data, error } = await supabase
+      .from(this.table)
+      .select("*")
+      .eq("chain_number", chainNumber)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data;
+  }
+
   public async getMainnets(): Promise<Chain[]> {
     const { data, error } = await supabase
       .from(this.table)

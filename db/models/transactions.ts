@@ -124,6 +124,15 @@ class Transactions {
     return data;
   }
 
+  // Idempotent insert — silently ignores duplicate tx_hash entries
+  public async upsertByHash(payload: CreateTransaction): Promise<void> {
+    const { error } = await supabase
+      .from(this.table)
+      .upsert(payload, { onConflict: "tx_hash" });
+
+    if (error) throw error;
+  }
+
   public async delete(id: string): Promise<void> {
     const { error } = await supabase.from(this.table).delete().eq("id", id);
     if (error) throw error;
