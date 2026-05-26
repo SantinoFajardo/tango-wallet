@@ -399,7 +399,7 @@ export default function AuthPage() {
   const isBusy = googleLoading || loading;
 
   return (
-    <div className="grid grid-cols-2 min-h-screen bg-(--bg) font-sans">
+    <div className="grid grid-cols-2 min-h-screen bg-(--bg) font-sans max-h-screen">
       {/* ── LEFT: Brand panel ─────────────────────────────────────────────── */}
       <div className="relative overflow-hidden flex flex-col p-10 text-white bg-[linear-gradient(160deg,var(--violet-700)_0%,var(--violet-900)_100%)]">
         <FloatingCoins />
