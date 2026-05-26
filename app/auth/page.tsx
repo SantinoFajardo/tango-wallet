@@ -399,9 +399,9 @@ export default function AuthPage() {
   const isBusy = googleLoading || loading;
 
   return (
-    <div className="grid grid-cols-2 min-h-screen bg-(--bg) font-sans max-h-screen">
+    <div className="grid grid-cols-1 lg:grid-cols-2 h-screen bg-(--bg) font-sans">
       {/* ── LEFT: Brand panel ─────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden flex flex-col p-10 text-white bg-[linear-gradient(160deg,var(--violet-700)_0%,var(--violet-900)_100%)]">
+      <div className="hidden lg:flex relative overflow-hidden flex-col p-10 text-white bg-[linear-gradient(160deg,var(--violet-700)_0%,var(--violet-900)_100%)]">
         <FloatingCoins />
 
         {/* Logo */}
@@ -462,7 +462,7 @@ export default function AuthPage() {
       </div>
 
       {/* ── RIGHT: Form panel ─────────────────────────────────────────────── */}
-      <div className="flex flex-col px-12 py-10 bg-(--bg-surface)">
+      <div className="flex flex-col px-4 sm:px-8 lg:px-12 py-5 bg-(--bg-surface) overflow-y-auto">
         {/* Top bar */}
         <div className="flex items-center justify-between mb-auto">
           <div className="text-[13px] text-(--text-muted)">
@@ -487,11 +487,11 @@ export default function AuthPage() {
         </div>
 
         {/* Form container */}
-        <div key={mode} className="fade-up w-full max-w-95 mx-auto py-8">
+        <div key={mode} className="fade-up w-full max-w-95 mx-auto py-4">
           <h2 className="text-[28px] font-bold text-(--text-primary) tracking-[-0.01em] mb-1.5">
             {mode === "signin" ? "Welcome back" : "Create your account"}
           </h2>
-          <p className="text-sm text-(--text-muted) mb-7 leading-relaxed">
+          <p className="text-sm text-(--text-muted) mb-5 leading-relaxed">
             {mode === "signin"
               ? "Sign in to access your gas-free wallet."
               : "Start sending crypto in under a minute — no gas, no hassle."}
@@ -526,7 +526,7 @@ export default function AuthPage() {
           </button>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
+          <div className="flex items-center gap-3 my-4">
             <div className="flex-1 h-px bg-(--border)" />
             <span className="text-xs text-(--text-muted) font-medium">
               or with email
@@ -537,7 +537,7 @@ export default function AuthPage() {
           {/* Form */}
           <form
             onSubmit={handleSubmit}
-            className={`flex flex-col gap-3.5 ${shake ? "shake" : ""}`}
+            className={`flex flex-col gap-3 ${shake ? "shake" : ""}`}
           >
             {/* Name — signup only */}
             {mode === "signup" && (
@@ -751,13 +751,13 @@ export default function AuthPage() {
           </form>
 
           {/* Info note */}
-          <div className="mt-4 px-3 py-2 rounded-lg bg-(--accent-soft) text-[11px] text-(--text-muted) text-center">
+          <div className="mt-3 px-3 py-2 rounded-lg bg-(--accent-soft) text-[11px] text-(--text-muted) text-center">
             🔐 A non-custodial wallet is created automatically on sign-up
           </div>
         </div>
 
         {/* Footer */}
-        <div className="mt-auto pt-6 flex items-center justify-between text-xs text-(--text-muted)">
+        <div className="mt-auto pt-4 flex items-center justify-between text-xs text-(--text-muted)">
           <span>© 2026 Tango Wallet</span>
           <div className="flex gap-4">
             {["Help", "Privacy", "Terms"].map((l) => (
