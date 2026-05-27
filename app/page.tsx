@@ -42,7 +42,9 @@ function getOrCreateWallet() {
   const stored = localStorage.getItem("tango_wallet_pk");
   const pk = stored ?? generatePrivateKey();
   if (!stored) localStorage.setItem("tango_wallet_pk", pk);
-  return privateKeyToAccount(pk as `0x${string}`);
+  const account = privateKeyToAccount(pk as `0x${string}`);
+  localStorage.setItem("tango_wallet_address", account.address);
+  return account;
 }
 
 export default function Home() {
@@ -162,7 +164,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 bg-gray-950 text-white">
+    <main className="flex min-h-full flex-col items-center justify-center gap-6 p-8 bg-gray-950 text-white">
       <h1 className="text-2xl font-bold">Tango Wallet</h1>
 
       {address && (
