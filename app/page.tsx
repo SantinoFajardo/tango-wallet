@@ -14,6 +14,7 @@ import { createSmartAccountClient } from "permissionless";
 import { to7702SimpleSmartAccount } from "permissionless/accounts";
 import { createPimlicoClient } from "permissionless/clients/pimlico";
 import { entryPoint08Address } from "viem/account-abstraction";
+import { supabase } from "@/db/supabase";
 
 const PIMLICO_API_KEY = process.env.NEXT_PUBLIC_PIMLICO_API_KEY ?? "";
 const PIMLICO_URL = `https://api.pimlico.io/v2/ethereum/rpc?apikey=${PIMLICO_API_KEY}`;
@@ -38,9 +39,9 @@ const ERC20_TRANSFER_ABI = [
 ] as const;
 
 function getOrCreateWallet() {
-  const stored = localStorage.getItem("tango_pk");
+  const stored = localStorage.getItem("tango_wallet_pk");
   const pk = stored ?? generatePrivateKey();
-  if (!stored) localStorage.setItem("tango_pk", pk);
+  if (!stored) localStorage.setItem("tango_wallet_pk", pk);
   return privateKeyToAccount(pk as `0x${string}`);
 }
 
@@ -52,8 +53,24 @@ export default function Home() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const account = getOrCreateWallet();
-    setAddress(account.address);
+    async function setup() {
+      const account = getOrCreateWallet();
+      setAddress(account.address);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user?.email) {
+        await supabase.from("users").upsert(
+          {
+            email: session.user.email,
+            wallet_address: account.address.toLowerCase(),
+          },
+          { onConflict: "email" }
+        );
+      }
+    }
+    setup();
   }, []);
 
   async function copyAddress() {
